@@ -2235,36 +2235,17 @@ namespace UnityMeshSimplifier
         /// <returns>The resulting mesh.</returns>
         public Mesh ToMesh()
         {
-            GetMeshData(out var verticesLocal, out var normals, out var tangents, out var colors, out var boneWeights, out var indices,
-                out var blendShapesLocal, out var uvs2D, out var uvs3D, out var uvs4D);
+            var verticesLocal = this.Vertices;
+            var normals = this.Normals;
+            var tangents = this.Tangents;
+            var colors = this.Colors;
+            var boneWeights = this.BoneWeights;
+            var indices = GetAllSubMeshTriangles();
+            var blendShapesLocal = GetAllBlendShapes();
 
-            return MeshUtils.CreateMesh(verticesLocal, indices, normals, tangents, colors, boneWeights, uvs2D, uvs3D, uvs4D, bindposes,
-                blendShapesLocal);
-        }
-
-        public void GetMeshData(
-            out Vector3[] vertices,
-            out Vector3[] normals,
-            out Vector4[] tangents,
-            out Color[] colors,
-            out BoneWeight[] boneWeights,
-            out int[][] indices,
-            out BlendShape[] blendShapes,
-            out List<Vector2>[] uvs2D,
-            out List<Vector3>[] uvs3D,
-            out List<Vector4>[] uvs4D)
-        {
-            vertices = this.Vertices;
-            normals = this.Normals;
-            tangents = this.Tangents;
-            colors = this.Colors;
-            boneWeights = this.BoneWeights;
-            indices = GetAllSubMeshTriangles();
-            blendShapes = GetAllBlendShapes();
-
-            uvs2D = null;
-            uvs3D = null;
-            uvs4D = null;
+            List<Vector2>[] uvs2D = null;
+            List<Vector3>[] uvs3D = null;
+            List<Vector4>[] uvs4D = null;
 
             if (vertUV2D != null)
             {
@@ -2273,7 +2254,7 @@ namespace UnityMeshSimplifier
                 {
                     if (vertUV2D[channel] != null)
                     {
-                        var uvs = new List<Vector2>(vertices.Length);
+                        var uvs = new List<Vector2>(verticesLocal.Length);
                         GetUVs(channel, uvs);
                         uvs2D[channel] = uvs;
                     }
@@ -2287,7 +2268,7 @@ namespace UnityMeshSimplifier
                 {
                     if (vertUV3D[channel] != null)
                     {
-                        var uvs = new List<Vector3>(vertices.Length);
+                        var uvs = new List<Vector3>(verticesLocal.Length);
                         GetUVs(channel, uvs);
                         uvs3D[channel] = uvs;
                     }
@@ -2301,12 +2282,15 @@ namespace UnityMeshSimplifier
                 {
                     if (vertUV4D[channel] != null)
                     {
-                        var uvs = new List<Vector4>(vertices.Length);
+                        var uvs = new List<Vector4>(verticesLocal.Length);
                         GetUVs(channel, uvs);
                         uvs4D[channel] = uvs;
                     }
                 }
             }
+
+            return MeshUtils.CreateMesh(verticesLocal, indices, normals, tangents, colors, boneWeights, uvs2D, uvs3D, uvs4D, bindposes,
+                blendShapesLocal);
         }
 
         #endregion

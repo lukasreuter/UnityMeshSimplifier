@@ -24,33 +24,56 @@ SOFTWARE.
 */
 #endregion
 
+using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 using NUnit.Framework;
+using UnityEditor;
 
 namespace UnityMeshSimplifier.Editor.Tests
 {
     public class MeshUtilsTest
     {
-        [Test]
-        public void CheckMeshSimplifierOutput()
-        {
-            //TODO: load a reference mesh and check the output from the simplifier against a know output to make we do not break anything with the burst refactor
-            /*LODGenerator.SimplifyMeshTest(,0.8f, SimplificationOptions.Default,
-                out Vector3[] vertices,
-                out Vector3[] normals,
-                out Vector4[] tangents,
-                out Color[] colors,
-                out BoneWeight[] boneWeights,
-                out int[][] indices,
-                out BlendShape[] blendShapes,
-                out List<Vector2>[] uvs2D,
-                out List<Vector3>[] uvs3D,
-                out List<Vector4>[] uvs4D );*/
+        // change this to true if you want to save new data for the sanity test
+        private bool recordMode = false;
 
-            Assert.Fail();
+        [Test]
+        public void CheckMeshSimplifierOutput(
+            [Values("TestMesh.fbx", /*"Hosmer.OBJ",*/ "Suzanne.fbx", "Teapot.obj")] string meshName,
+            [Values(1f, 0.65f, 0.4225f)] float quality)
+        {
+            var testMesh = AssetDatabase.LoadAssetAtPath<Mesh>($"Assets/TestData/{meshName}");
+
+            Assert.That(testMesh, Is.Not.Null);
+
+            // load a reference mesh and check the output from the simplifier against a know output to make we do not break anything with the burst refactor
+            var simplifiedMesh = LODGenerator.SimplifyMesh(testMesh, quality, SimplificationOptions.Default);
+
+            var assetPath = $"Assets/TestData/{meshName}_decimated_{quality.ToString(CultureInfo.InvariantCulture)}.mesh";
+
+            if (recordMode)
+            {
+                AssetDatabase.CreateAsset(simplifiedMesh, assetPath);
+            }
+            else
+            {
+                var referenceMesh = AssetDatabase.LoadAssetAtPath<Mesh>(assetPath);
+                Assert.That(simplifiedMesh.vertices, Is.EqualTo(referenceMesh.vertices));
+                Assert.That(simplifiedMesh.normals, Is.EqualTo(referenceMesh.normals));
+                Assert.That(simplifiedMesh.tangents, Is.EqualTo(referenceMesh.tangents));
+                Assert.That(simplifiedMesh.colors, Is.EqualTo(referenceMesh.colors));
+                Assert.That(simplifiedMesh.boneWeights, Is.EqualTo(referenceMesh.boneWeights));
+                Assert.That(simplifiedMesh.blendShapeCount, Is.EqualTo(referenceMesh.blendShapeCount));
+                Assert.That(simplifiedMesh.uv, Is.EqualTo(referenceMesh.uv));
+                Assert.That(simplifiedMesh.uv2, Is.EqualTo(referenceMesh.uv2));
+                Assert.That(simplifiedMesh.uv3, Is.EqualTo(referenceMesh.uv3));
+                Assert.That(simplifiedMesh.uv4, Is.EqualTo(referenceMesh.uv4));
+
+            }
         }
 
         [Test]

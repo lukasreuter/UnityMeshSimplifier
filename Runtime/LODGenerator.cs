@@ -607,7 +607,7 @@ namespace UnityMeshSimplifier
             }
         }
 
-        private static Mesh SimplifyMesh(Mesh mesh, float quality, in SimplificationOptions options)
+        public static Mesh SimplifyMesh(Mesh mesh, float quality, in SimplificationOptions options)
         {
 #warning convert this to a job instead
             var meshSimplifier = new MeshSimplifier();
@@ -619,36 +619,6 @@ namespace UnityMeshSimplifier
             var simplifiedMesh = meshSimplifier.ToMesh();
             simplifiedMesh.bindposes = mesh.bindposes;
             return simplifiedMesh;
-        }
-
-        public static void SimplifyMeshTest(Mesh mesh, float quality, in SimplificationOptions options,
-            out Vector3[] vertices,
-            out Vector3[] normals,
-            out Vector4[] tangents,
-            out Color[] colors,
-            out BoneWeight[] boneWeights,
-            out int[][] indices,
-            out BlendShape[] blendShapes,
-            out List<Vector2>[] uvs2D,
-            out List<Vector3>[] uvs3D,
-            out List<Vector4>[] uvs4D )
-        {
-            var meshSimplifier = new MeshSimplifier();
-            meshSimplifier.SimplificationOptions = options;
-            meshSimplifier.Initialize(mesh);
-            meshSimplifier.SimplifyMesh(quality);
-
-            meshSimplifier.GetMeshData(
-                out  vertices,
-                out  normals,
-                out  tangents,
-                out  colors,
-                out  boneWeights,
-                out  indices,
-                out  blendShapes,
-                out  uvs2D,
-                out  uvs3D,
-                out  uvs4D );
         }
 
         private static void DestroyObject(Object obj)
