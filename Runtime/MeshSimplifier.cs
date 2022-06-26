@@ -2135,6 +2135,7 @@ namespace UnityMeshSimplifier
                 // Update mesh once in a while
                 if ((iteration % 5) == 0)
                 {
+#warning no2 heavy method
                     UpdateMesh(iteration);
                     triangles = this.triangles.Data;
                     triangleCount = this.triangles.Length;
@@ -2158,6 +2159,7 @@ namespace UnityMeshSimplifier
                     Debug.LogFormat("iteration {0} - triangles {1} threshold {2}", iteration, (startTrisCount - deletedTris), threshold);
                 }
 
+#warning no1 heavy method
                 // Remove vertices & mark deleted triangles
                 RemoveVertexPass(startTrisCount, targetTrisCount, threshold, deleted0, deleted1, ref deletedTris);
             }

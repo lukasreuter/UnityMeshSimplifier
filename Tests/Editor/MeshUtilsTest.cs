@@ -35,6 +35,13 @@ namespace UnityMeshSimplifier.Editor.Tests
     public class MeshUtilsTest
     {
         [Test]
+        public void CheckMeshSimplifierOutput()
+        {
+            //TODO: load a reference mesh and check the output from the simplifier against a know output to make we do not break anything with the burst refactor
+            Assert.Fail();
+        }
+
+        [Test]
         public void ShouldApplyBlendShapes()
         {
             var mesh = new Mesh();

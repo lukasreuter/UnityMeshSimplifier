@@ -609,9 +609,11 @@ namespace UnityMeshSimplifier
 
         private static Mesh SimplifyMesh(Mesh mesh, float quality, in SimplificationOptions options)
         {
+#warning convert this to a job instead
             var meshSimplifier = new MeshSimplifier();
             meshSimplifier.SimplificationOptions = options;
             meshSimplifier.Initialize(mesh);
+#warning optimize this (heaviest callstack)
             meshSimplifier.SimplifyMesh(quality);
 
             var simplifiedMesh = meshSimplifier.ToMesh();
