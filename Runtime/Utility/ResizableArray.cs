@@ -156,6 +156,7 @@ namespace UnityMeshSimplifier
         /// <param name="clearMemory">If memory that is no longer part of the array should be cleared.</param>
         public void Resize(int length, bool trimExess = false, bool clearMemory = false)
         {
+#warning find out how often the case happens where we have to increase the size and check if we can avoid that case as much as possible
             if (length < 0)
                 throw new ArgumentOutOfRangeException(nameof(length));
 

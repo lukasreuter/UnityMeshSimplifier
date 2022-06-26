@@ -2235,17 +2235,36 @@ namespace UnityMeshSimplifier
         /// <returns>The resulting mesh.</returns>
         public Mesh ToMesh()
         {
-            var vertices = this.Vertices;
-            var normals = this.Normals;
-            var tangents = this.Tangents;
-            var colors = this.Colors;
-            var boneWeights = this.BoneWeights;
-            var indices = GetAllSubMeshTriangles();
-            var blendShapes = GetAllBlendShapes();
+            GetMeshData(out var verticesLocal, out var normals, out var tangents, out var colors, out var boneWeights, out var indices,
+                out var blendShapesLocal, out var uvs2D, out var uvs3D, out var uvs4D);
 
-            List<Vector2>[] uvs2D = null;
-            List<Vector3>[] uvs3D = null;
-            List<Vector4>[] uvs4D = null;
+            return MeshUtils.CreateMesh(verticesLocal, indices, normals, tangents, colors, boneWeights, uvs2D, uvs3D, uvs4D, bindposes,
+                blendShapesLocal);
+        }
+
+        public void GetMeshData(
+            out Vector3[] vertices,
+            out Vector3[] normals,
+            out Vector4[] tangents,
+            out Color[] colors,
+            out BoneWeight[] boneWeights,
+            out int[][] indices,
+            out BlendShape[] blendShapes,
+            out List<Vector2>[] uvs2D,
+            out List<Vector3>[] uvs3D,
+            out List<Vector4>[] uvs4D)
+        {
+            vertices = this.Vertices;
+            normals = this.Normals;
+            tangents = this.Tangents;
+            colors = this.Colors;
+            boneWeights = this.BoneWeights;
+            indices = GetAllSubMeshTriangles();
+            blendShapes = GetAllBlendShapes();
+
+            uvs2D = null;
+            uvs3D = null;
+            uvs4D = null;
 
             if (vertUV2D != null)
             {
@@ -2288,9 +2307,8 @@ namespace UnityMeshSimplifier
                     }
                 }
             }
-
-            return MeshUtils.CreateMesh(vertices, indices, normals, tangents, colors, boneWeights, uvs2D, uvs3D, uvs4D, bindposes, blendShapes);
         }
+
         #endregion
 
         #region Validate Options

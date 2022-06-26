@@ -38,6 +38,18 @@ namespace UnityMeshSimplifier.Editor.Tests
         public void CheckMeshSimplifierOutput()
         {
             //TODO: load a reference mesh and check the output from the simplifier against a know output to make we do not break anything with the burst refactor
+            /*LODGenerator.SimplifyMeshTest(,0.8f, SimplificationOptions.Default,
+                out Vector3[] vertices,
+                out Vector3[] normals,
+                out Vector4[] tangents,
+                out Color[] colors,
+                out BoneWeight[] boneWeights,
+                out int[][] indices,
+                out BlendShape[] blendShapes,
+                out List<Vector2>[] uvs2D,
+                out List<Vector3>[] uvs3D,
+                out List<Vector4>[] uvs4D );*/
+
             Assert.Fail();
         }
 
