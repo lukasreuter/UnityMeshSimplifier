@@ -45,9 +45,9 @@ namespace UnityMeshSimplifier
         /// The count of supported UV channels.
         /// </summary>
 #if UNITY_8UV_SUPPORT
-        public static readonly int UVChannelCount = 8;
+        public const int UVChannelCount = 8;
 #else
-        public static readonly int UVChannelCount = 4;
+        public const int UVChannelCount = 4;
 #endif
         #endregion
 

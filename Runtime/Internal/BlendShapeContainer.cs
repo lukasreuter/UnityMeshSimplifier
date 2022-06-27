@@ -24,23 +24,29 @@ SOFTWARE.
 */
 #endregion
 
+using System;
 using System.Runtime.CompilerServices;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace UnityMeshSimplifier.Internal
 {
-    internal class BlendShapeContainer
+    internal struct BlendShapeContainer : IDisposable
     {
-        private readonly string shapeName;
-        private readonly BlendShapeFrameContainer[] frames;
+        private FixedString4096Bytes shapeName;
+        private UnsafeList<BlendShapeFrameContainer> frames;
 
-        public BlendShapeContainer(BlendShape blendShape)
+        public BlendShapeContainer(BlendShape blendShape, Allocator allocator)
         {
-            shapeName = blendShape.ShapeName;
-            frames = new BlendShapeFrameContainer[blendShape.Frames.Length];
-            for (int i = 0; i < frames.Length; i++)
+            shapeName = new FixedString4096Bytes(blendShape.ShapeName);
+
+            var framesLength = blendShape.Frames.Length;
+            frames = new UnsafeList<BlendShapeFrameContainer>(framesLength, allocator);
+            frames.Length = framesLength;
+            for (int i = 0; i < framesLength; ++i)
             {
-                frames[i] = new BlendShapeFrameContainer(blendShape.Frames[i]);
+                frames[i] = new BlendShapeFrameContainer(blendShape.Frames[i], allocator);
             }
         }
 
@@ -54,11 +60,11 @@ namespace UnityMeshSimplifier.Internal
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, ref Vector3 barycentricCoord)
+        public void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, in Vector3 barycentricCoord)
         {
             for (int i = 0; i < frames.Length; i++)
             {
-                frames[i].InterpolateVertexAttributes(dst, i0, i1, i2, ref barycentricCoord);
+                frames[i].InterpolateVertexAttributes(dst, i0, i1, i2, in barycentricCoord);
             }
         }
 
@@ -77,7 +83,18 @@ namespace UnityMeshSimplifier.Internal
             {
                 shapeFrames[i] = frames[i].ToBlendShapeFrame();
             }
-            return new BlendShape(shapeName, shapeFrames);
+            return new BlendShape(shapeName.ToString(), shapeFrames);
+        }
+
+        public void Dispose()
+        {
+            for (var i = 0; i < frames.Length; i++)
+            {
+                ref var frame = ref frames.ElementAt(i);
+                frame.Dispose();
+            }
+
+            frames.Dispose();
         }
     }
 }

@@ -32,7 +32,7 @@ namespace UnityMeshSimplifier.Internal
     internal struct BorderVertex
     {
         public int index;
-        public int hash;
+        public readonly int hash;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BorderVertex(int index, int hash)
@@ -42,14 +42,9 @@ namespace UnityMeshSimplifier.Internal
         }
     }
 
-    internal class BorderVertexComparer : IComparer<BorderVertex>
+    internal struct BorderVertexComparer : IComparer<BorderVertex>
     {
-        public static readonly BorderVertexComparer instance = new BorderVertexComparer();
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int Compare(BorderVertex x, BorderVertex y)
-        {
-            return x.hash.CompareTo(y.hash);
-        }
+        public int Compare(BorderVertex x, BorderVertex y) => x.hash.CompareTo(y.hash);
     }
 }

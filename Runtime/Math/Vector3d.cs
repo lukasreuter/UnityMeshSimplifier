@@ -34,6 +34,7 @@ namespace UnityMeshSimplifier
     /// <summary>
     /// A double precision 3D vector.
     /// </summary>
+    [Obsolete("replace with math.double3 instead")]
     [StructLayout(LayoutKind.Sequential)]
     public struct Vector3d : IEquatable<Vector3d>
     {
