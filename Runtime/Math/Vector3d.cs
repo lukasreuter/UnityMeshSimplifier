@@ -27,6 +27,7 @@ SOFTWARE.
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace UnityMeshSimplifier
@@ -286,6 +287,11 @@ namespace UnityMeshSimplifier
         public static implicit operator Vector3d(Vector3 v)
         {
             return new Vector3d(v.x, v.y, v.z);
+        }
+
+        public static implicit operator double3(Vector3d v)
+        {
+            return new double3(v.x, v.y, v.z);
         }
 
         /// <summary>

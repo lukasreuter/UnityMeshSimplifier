@@ -26,6 +26,7 @@ SOFTWARE.
 
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
 using UnityEngine;
 
 namespace UnityMeshSimplifier
@@ -612,12 +613,14 @@ namespace UnityMeshSimplifier
 #warning convert this to a job instead
             var meshSimplifier = new MeshSimplifier();
             meshSimplifier.SimplificationOptions = options;
-            meshSimplifier.Initialize(mesh);
+            meshSimplifier.Initialize(mesh, Allocator.TempJob);
 #warning optimize this (heaviest callstack)
             meshSimplifier.SimplifyMesh(quality);
 
             var simplifiedMesh = meshSimplifier.ToMesh();
             simplifiedMesh.bindposes = mesh.bindposes;
+
+            meshSimplifier.Dispose();
             return simplifiedMesh;
         }
 
