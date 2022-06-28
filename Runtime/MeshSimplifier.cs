@@ -77,7 +77,7 @@ namespace UnityMeshSimplifier
         private NativeList<Ref> refs;
 
         private NativeList<Vector3> vertNormals;
-        private ResizableArray<Vector4> vertTangents = null;
+        private NativeList<Vector4> vertTangents;
         private UVChannels<Vector2> vertUV2D = null;
         private UVChannels<Vector3> vertUV3D = null;
         private UVChannels<Vector4> vertUV4D = null;
@@ -328,8 +328,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public Vector4[] Tangents
         {
-            get => (vertTangents != null ? vertTangents.Data : null);
-            set => InitializeVertexAttribute(value, ref vertTangents, "tangents");
+            get => (vertTangents.IsCreated ? vertTangents.ToArrayNBC() : null);
+            // set => InitializeVertexAttribute(value, ref vertTangents, "tangents");
         }
 
         /// <summary>
@@ -738,7 +738,7 @@ namespace UnityMeshSimplifier
             {
                 vertNormals[dst] = Vector3.Normalize((vertNormals[i0] * barycentricCoord.x) + (vertNormals[i1] * barycentricCoord.y) + (vertNormals[i2] * barycentricCoord.z));
             }
-            if (vertTangents != null)
+            if (!vertTangents.IsEmpty)
             {
                 vertTangents[dst] = NormalizeTangent((vertTangents[i0] * barycentricCoord.x) + (vertTangents[i1] * barycentricCoord.y) + (vertTangents[i2] * barycentricCoord.z));
             }
@@ -1243,7 +1243,6 @@ namespace UnityMeshSimplifier
                 vertices[i].tcount = 0;
             }
 
-            var vertTangents = (this.vertTangents != null ? this.vertTangents.Data : null);
             var vertUV2D = (this.vertUV2D != null ? this.vertUV2D.Data : null);
             var vertUV3D = (this.vertUV3D != null ? this.vertUV3D.Data : null);
             var vertUV4D = (this.vertUV4D != null ? this.vertUV4D.Data : null);
@@ -1335,7 +1334,7 @@ namespace UnityMeshSimplifier
                         vertices[dst].index = dst;
                         vertices[dst].p = vert.p;
                         if (!this.vertNormals.IsEmpty) this.vertNormals[dst] = this.vertNormals[i];
-                        if (vertTangents != null) vertTangents[dst] = vertTangents[i];
+                        if (!this.vertTangents.IsEmpty) this.vertTangents[dst] = this.vertTangents[i];
                         if (vertUV2D != null)
                         {
                             for (int j = 0; j < UVChannelCount; j++)
@@ -1396,7 +1395,7 @@ namespace UnityMeshSimplifier
             vertexCount = dst;
             this.vertices.Resize(vertexCount);
             if (!this.vertNormals.IsEmpty) this.vertNormals.Resize(vertexCount, NativeArrayOptions.ClearMemory);
-            if (vertTangents != null) this.vertTangents.Resize(vertexCount, true);
+            if (!this.vertTangents.IsEmpty) this.vertTangents.Resize(vertexCount, NativeArrayOptions.ClearMemory);
             if (vertUV2D != null) this.vertUV2D.Resize(vertexCount, true);
             if (vertUV3D != null) this.vertUV3D.Resize(vertexCount, true);
             if (vertUV4D != null) this.vertUV4D.Resize(vertexCount, true);
@@ -2063,7 +2062,7 @@ namespace UnityMeshSimplifier
 
             Vertices = mesh.vertices;
             InitializeVertexAttribute(mesh.normals, ref vertNormals, "normals", allocator);
-            this.Tangents = mesh.tangents;
+            InitializeVertexAttribute(mesh.tangents, ref vertTangents, "tangents", allocator);
 
             this.Colors = mesh.colors;
             this.BoneWeights = mesh.boneWeights;
@@ -2125,6 +2124,7 @@ namespace UnityMeshSimplifier
             triangles.Dispose();
             refs.Dispose();
             vertNormals.Dispose();
+            vertTangents.Dispose();
         }
         #endregion
 
