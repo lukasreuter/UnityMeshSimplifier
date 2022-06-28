@@ -45,6 +45,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
+using Unity.Collections.NotBurstCompatible;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityMeshSimplifier.Internal;
@@ -75,7 +76,7 @@ namespace UnityMeshSimplifier
         private ResizableArray<Vertex> vertices = null;
         private NativeList<Ref> refs;
 
-        private ResizableArray<Vector3> vertNormals = null;
+        private NativeList<Vector3> vertNormals;
         private ResizableArray<Vector4> vertTangents = null;
         private UVChannels<Vector2> vertUV2D = null;
         private UVChannels<Vector3> vertUV3D = null;
@@ -318,11 +319,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public Vector3[] Normals
         {
-            get { return (vertNormals != null ? vertNormals.Data : null); }
-            set
-            {
-                InitializeVertexAttribute(value, ref vertNormals, "normals");
-            }
+            get => (vertNormals.IsCreated ? vertNormals.ToArrayNBC() : null);
+            // set =>
         }
 
         /// <summary>
@@ -330,11 +328,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public Vector4[] Tangents
         {
-            get { return (vertTangents != null ? vertTangents.Data : null); }
-            set
-            {
-                InitializeVertexAttribute(value, ref vertTangents, "tangents");
-            }
+            get => (vertTangents != null ? vertTangents.Data : null);
+            set => InitializeVertexAttribute(value, ref vertTangents, "tangents");
         }
 
         /// <summary>
@@ -416,11 +411,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public Color[] Colors
         {
-            get { return (vertColors != null ? vertColors.Data : null); }
-            set
-            {
-                InitializeVertexAttribute(value, ref vertColors, "colors");
-            }
+            get => (vertColors != null ? vertColors.Data : null);
+            set => InitializeVertexAttribute(value, ref vertColors, "colors");
         }
 
         /// <summary>
@@ -429,10 +421,7 @@ namespace UnityMeshSimplifier
         public BoneWeight[] BoneWeights
         {
             get { return (vertBoneWeights != null ? vertBoneWeights.Data : null); }
-            set
-            {
-                InitializeVertexAttribute(value, ref vertBoneWeights, "boneWeights");
-            }
+            set => InitializeVertexAttribute(value, ref vertBoneWeights, "boneWeights");
         }
         #endregion
 
@@ -464,6 +453,31 @@ namespace UnityMeshSimplifier
 
         #region Private Methods
         #region Initialize Vertex Attribute
+
+        // ReSharper disable once RedundantAssignment
+        private void InitializeVertexAttribute<T>(
+            T[] attributeValues,
+            ref NativeList<T> attributeArray,
+            string attributeName,
+            Allocator allocator) where T : unmanaged
+        {
+            attributeArray = new NativeList<T>(0, allocator);
+
+            if (attributeValues != null && attributeValues.Length == vertices.Length)
+            {
+                attributeArray.Resize(attributeValues.Length, NativeArrayOptions.ClearMemory);
+
+                NativeArray<T>.Copy(attributeValues, 0, attributeArray, 0, attributeValues.Length);
+            }
+            else
+            {
+                if (attributeValues != null && attributeValues.Length > 0)
+                {
+                    Debug.LogError($"Failed to set vertex attribute '{attributeName}' with {attributeValues.Length} length of array, when {vertices.Length} was needed.");
+                }
+            }
+        }
+
         private void InitializeVertexAttribute<T>(T[] attributeValues, ref ResizableArray<T> attributeArray, string attributeName)
         {
             if (attributeValues != null && attributeValues.Length == vertices.Length)
@@ -720,7 +734,7 @@ namespace UnityMeshSimplifier
         #region Interpolate Vertex Attributes
         private void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, ref Vector3 barycentricCoord)
         {
-            if (vertNormals != null)
+            if (!vertNormals.IsEmpty)
             {
                 vertNormals[dst] = Vector3.Normalize((vertNormals[i0] * barycentricCoord.x) + (vertNormals[i1] * barycentricCoord.y) + (vertNormals[i2] * barycentricCoord.z));
             }
@@ -1229,7 +1243,6 @@ namespace UnityMeshSimplifier
                 vertices[i].tcount = 0;
             }
 
-            var vertNormals = (this.vertNormals != null ? this.vertNormals.Data : null);
             var vertTangents = (this.vertTangents != null ? this.vertTangents.Data : null);
             var vertUV2D = (this.vertUV2D != null ? this.vertUV2D.Data : null);
             var vertUV3D = (this.vertUV3D != null ? this.vertUV3D.Data : null);
@@ -1321,7 +1334,7 @@ namespace UnityMeshSimplifier
                     {
                         vertices[dst].index = dst;
                         vertices[dst].p = vert.p;
-                        if (vertNormals != null) vertNormals[dst] = vertNormals[i];
+                        if (!this.vertNormals.IsEmpty) this.vertNormals[dst] = this.vertNormals[i];
                         if (vertTangents != null) vertTangents[dst] = vertTangents[i];
                         if (vertUV2D != null)
                         {
@@ -1382,7 +1395,7 @@ namespace UnityMeshSimplifier
 
             vertexCount = dst;
             this.vertices.Resize(vertexCount);
-            if (vertNormals != null) this.vertNormals.Resize(vertexCount, true);
+            if (!this.vertNormals.IsEmpty) this.vertNormals.Resize(vertexCount, NativeArrayOptions.ClearMemory);
             if (vertTangents != null) this.vertTangents.Resize(vertexCount, true);
             if (vertUV2D != null) this.vertUV2D.Resize(vertexCount, true);
             if (vertUV3D != null) this.vertUV3D.Resize(vertexCount, true);
@@ -2048,8 +2061,8 @@ namespace UnityMeshSimplifier
             triangles = new NativeList<Triangle>(allocator);
             refs = new NativeList<Ref>(allocator);
 
-            this.Vertices = mesh.vertices;
-            this.Normals = mesh.normals;
+            Vertices = mesh.vertices;
+            InitializeVertexAttribute(mesh.normals, ref vertNormals, "normals", allocator);
             this.Tangents = mesh.tangents;
 
             this.Colors = mesh.colors;
@@ -2111,6 +2124,7 @@ namespace UnityMeshSimplifier
         {
             triangles.Dispose();
             refs.Dispose();
+            vertNormals.Dispose();
         }
         #endregion
 
