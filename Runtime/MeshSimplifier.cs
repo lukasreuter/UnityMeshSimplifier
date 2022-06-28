@@ -89,8 +89,8 @@ namespace UnityMeshSimplifier
         private NativeList<Matrix4x4> bindposes;
 
         // Pre-allocated buffers
-        private readonly HashSet<Triangle> triangleHashSet1 = new HashSet<Triangle>();
-        private readonly HashSet<Triangle> triangleHashSet2 = new HashSet<Triangle>();
+        private NativeParallelHashSet<Triangle> triangleHashSet1;
+        private NativeParallelHashSet<Triangle> triangleHashSet2;
         private FixedArray3<double> errArr;
         private FixedArray3<int> attributeIndexArr;
         #endregion
@@ -1432,7 +1432,7 @@ namespace UnityMeshSimplifier
 
         #region Triangle helper functions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void GetTrianglesContainingVertex(ref Vertex vert, HashSet<Triangle> tris)
+        private void GetTrianglesContainingVertex(ref Vertex vert, NativeParallelHashSet<Triangle> tris)
         {
             int trianglesCount = vert.tcount;
             int startIndex = vert.tstart;
@@ -1444,7 +1444,7 @@ namespace UnityMeshSimplifier
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void GetTrianglesContainingBothVertices(ref Vertex vert0, ref Vertex vert1, HashSet<Triangle> tris)
+        private void GetTrianglesContainingBothVertices(ref Vertex vert0, ref Vertex vert1, NativeParallelHashSet<Triangle> tris)
         {
             int triangleCount = vert0.tcount;
             int startIndex = vert0.tstart;
@@ -2004,6 +2004,8 @@ namespace UnityMeshSimplifier
             vertUV2D = new UVChannels<Vector2>(allocator);
             vertUV3D = new UVChannels<Vector3>(allocator);
             vertUV4D = new UVChannels<Vector4>(allocator);
+            triangleHashSet1 = new NativeParallelHashSet<Triangle>(10, allocator);
+            triangleHashSet2 = new NativeParallelHashSet<Triangle>(10, allocator);
 
             Vertices = mesh.vertices;
             InitializeVertexAttribute(mesh.normals, ref vertNormals, "normals", allocator);
@@ -2077,6 +2079,8 @@ namespace UnityMeshSimplifier
             vertUV3D.Dispose();
             vertUV4D.Dispose();
             bindposes.Dispose();
+            triangleHashSet1.Dispose();
+            triangleHashSet2.Dispose();
         }
         #endregion
 
