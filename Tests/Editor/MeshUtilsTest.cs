@@ -43,7 +43,7 @@ namespace UnityMeshSimplifier.Editor.Tests
 
         [Test]
         public void CheckMeshSimplifierOutput(
-            [Values("TestMesh.fbx", /*"Hosmer.OBJ",*/ "Suzanne.fbx", "Teapot.obj")] string meshName,
+            [Values("Boulder.fbx", /*"Hosmer.OBJ",*/ "Erika.fbx", "Suzanne.fbx", "Teapot.obj")] string meshName,
             [Values(1f, 0.65f, 0.4225f)] float quality)
         {
             var testMesh = AssetDatabase.LoadAssetAtPath<Mesh>($"Assets/TestData/{meshName}");
