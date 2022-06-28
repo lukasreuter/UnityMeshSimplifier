@@ -81,7 +81,7 @@ namespace UnityMeshSimplifier
         private UVChannels<Vector2> vertUV2D = null;
         private UVChannels<Vector3> vertUV3D = null;
         private UVChannels<Vector4> vertUV4D = null;
-        private ResizableArray<Color> vertColors = null;
+        private NativeList<Color> vertColors;
         private ResizableArray<BoneWeight> vertBoneWeights = null;
         private ResizableArray<BlendShapeContainer> blendShapes = null;
 
@@ -411,8 +411,8 @@ namespace UnityMeshSimplifier
         /// </summary>
         public Color[] Colors
         {
-            get => (vertColors != null ? vertColors.Data : null);
-            set => InitializeVertexAttribute(value, ref vertColors, "colors");
+            get => (vertColors.IsCreated ? vertColors.ToArrayNBC() : null);
+            // set => InitializeVertexAttribute(value, ref vertColors, "colors");
         }
 
         /// <summary>
@@ -775,7 +775,7 @@ namespace UnityMeshSimplifier
                     }
                 }
             }
-            if (vertColors != null)
+            if (!vertColors.IsEmpty)
             {
                 vertColors[dst] = (vertColors[i0] * barycentricCoord.x) + (vertColors[i1] * barycentricCoord.y) + (vertColors[i2] * barycentricCoord.z);
             }
@@ -1246,7 +1246,6 @@ namespace UnityMeshSimplifier
             var vertUV2D = (this.vertUV2D != null ? this.vertUV2D.Data : null);
             var vertUV3D = (this.vertUV3D != null ? this.vertUV3D.Data : null);
             var vertUV4D = (this.vertUV4D != null ? this.vertUV4D.Data : null);
-            var vertColors = (this.vertColors != null ? this.vertColors.Data : null);
             var vertBoneWeights = (this.vertBoneWeights != null ? this.vertBoneWeights.Data : null);
             var blendShapes = (this.blendShapes != null ? this.blendShapes.Data : null);
 
@@ -1368,7 +1367,7 @@ namespace UnityMeshSimplifier
                                 }
                             }
                         }
-                        if (vertColors != null) vertColors[dst] = vertColors[i];
+                        if (!this.vertColors.IsEmpty) this.vertColors[dst] = this.vertColors[i];
                         if (vertBoneWeights != null) vertBoneWeights[dst] = vertBoneWeights[i];
 
                         if (blendShapes != null)
@@ -1399,7 +1398,7 @@ namespace UnityMeshSimplifier
             if (vertUV2D != null) this.vertUV2D.Resize(vertexCount, true);
             if (vertUV3D != null) this.vertUV3D.Resize(vertexCount, true);
             if (vertUV4D != null) this.vertUV4D.Resize(vertexCount, true);
-            if (vertColors != null) this.vertColors.Resize(vertexCount, true);
+            if (!this.vertColors.IsEmpty) this.vertColors.Resize(vertexCount, NativeArrayOptions.ClearMemory);
             if (vertBoneWeights != null) this.vertBoneWeights.Resize(vertexCount, true);
 
             if (blendShapes != null)
@@ -2063,8 +2062,8 @@ namespace UnityMeshSimplifier
             Vertices = mesh.vertices;
             InitializeVertexAttribute(mesh.normals, ref vertNormals, "normals", allocator);
             InitializeVertexAttribute(mesh.tangents, ref vertTangents, "tangents", allocator);
+            InitializeVertexAttribute(mesh.colors, ref vertColors, "colors", allocator);
 
-            this.Colors = mesh.colors;
             this.BoneWeights = mesh.boneWeights;
             this.bindposes = mesh.bindposes;
 
@@ -2125,6 +2124,7 @@ namespace UnityMeshSimplifier
             refs.Dispose();
             vertNormals.Dispose();
             vertTangents.Dispose();
+            vertColors.Dispose();
         }
         #endregion
 
