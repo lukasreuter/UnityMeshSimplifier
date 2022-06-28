@@ -86,7 +86,7 @@ namespace UnityMeshSimplifier
         private NativeList<BoneWeight> vertBoneWeights;
         private ResizableArray<BlendShapeContainer> blendShapes = null;
 
-        private Matrix4x4[] bindposes = null;
+        private NativeList<Matrix4x4> bindposes;
 
         // Pre-allocated buffers
         private readonly HashSet<Triangle> triangleHashSet1 = new HashSet<Triangle>();
@@ -289,7 +289,10 @@ namespace UnityMeshSimplifier
                 if (value == null)
                     throw new ArgumentNullException(nameof(value));
 
-                bindposes = null;
+                if (bindposes.IsCreated)
+                {
+                    bindposes.Clear();
+                }
                 vertices.Resize(value.Length);
                 var vertArr = vertices.Data;
                 for (int i = 0; i < value.Length; i++)
@@ -2008,7 +2011,8 @@ namespace UnityMeshSimplifier
             InitializeVertexAttribute(mesh.colors, ref vertColors, "colors", allocator);
             InitializeVertexAttribute(mesh.boneWeights, ref vertBoneWeights, "boneWeights", allocator);
 
-            this.bindposes = mesh.bindposes;
+            this.bindposes = new NativeList<Matrix4x4>(mesh.bindposes.Length, allocator);
+            bindposes.CopyFromNBC(mesh.bindposes.ToArray());
 
             for (int channel = 0; channel < UVChannelCount; channel++)
             {
@@ -2072,6 +2076,7 @@ namespace UnityMeshSimplifier
             vertUV2D.Dispose();
             vertUV3D.Dispose();
             vertUV4D.Dispose();
+            bindposes.Dispose();
         }
         #endregion
 
@@ -2206,6 +2211,7 @@ namespace UnityMeshSimplifier
             var boneWeights = this.BoneWeights;
             var indices = GetAllSubMeshTriangles();
             var blendShapesLocal = GetAllBlendShapes();
+            var bindposes = this.bindposes.IsEmpty ? null : this.bindposes.ToArrayNBC();
 
             List<Vector2>[] uvs2D = null;
             List<Vector3>[] uvs3D = null;

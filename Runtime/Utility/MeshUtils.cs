@@ -100,7 +100,18 @@ namespace UnityMeshSimplifier
         /// <param name="uvs4D">The mesh 4D UV sets.</param>
         /// <param name="bindposes">The mesh bindposes.</param>
         /// <returns>The created mesh.</returns>
-        public static Mesh CreateMesh(Vector3[] vertices, int[][] indices, Vector3[] normals, Vector4[] tangents, Color[] colors, BoneWeight[] boneWeights, List<Vector2>[] uvs2D, List<Vector3>[] uvs3D, List<Vector4>[] uvs4D, Matrix4x4[] bindposes, BlendShape[] blendShapes)
+        public static Mesh CreateMesh(
+            Vector3[] vertices,
+            int[][] indices,
+            Vector3[] normals,
+            Vector4[] tangents,
+            Color[] colors,
+            BoneWeight[] boneWeights,
+            List<Vector2>[] uvs2D,
+            List<Vector3>[] uvs3D,
+            List<Vector4>[] uvs4D,
+            Matrix4x4[] bindposes,
+            BlendShape[] blendShapes)
         {
             if (vertices == null)
                 throw new ArgumentNullException(nameof(vertices));
