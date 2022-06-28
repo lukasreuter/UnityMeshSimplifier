@@ -105,7 +105,7 @@ namespace UnityMeshSimplifier.Internal
 
         #region Public Methods
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void GetAttributeIndices(int[] attributeIndices)
+        public void GetAttributeIndices(ref FixedArray3<int> attributeIndices)
         {
             attributeIndices[0] = va0;
             attributeIndices[1] = va1;
@@ -132,7 +132,7 @@ namespace UnityMeshSimplifier.Internal
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void GetErrors(double[] err)
+        public void GetErrors(ref FixedArray3<double> err)
         {
             err[0] = err0;
             err[1] = err1;

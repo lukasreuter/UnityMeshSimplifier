@@ -85,10 +85,10 @@ namespace UnityMeshSimplifier
         private Matrix4x4[] bindposes = null;
 
         // Pre-allocated buffers
-        private readonly double[] errArr = new double[3];
-        private readonly int[] attributeIndexArr = new int[3];
         private readonly HashSet<Triangle> triangleHashSet1 = new HashSet<Triangle>();
         private readonly HashSet<Triangle> triangleHashSet2 = new HashSet<Triangle>();
+        private FixedArray3<double> errArr;
+        private FixedArray3<int> attributeIndexArr;
         #endregion
 
         #region Properties
@@ -832,8 +832,8 @@ namespace UnityMeshSimplifier
                 if (triangles[tid].dirty || triangles[tid].deleted || triangles[tid].err3 > threshold)
                     continue;
 
-                triangles[tid].GetErrors(errArr);
-                triangles[tid].GetAttributeIndices(attributeIndexArr);
+                triangles[tid].GetErrors(ref errArr);
+                triangles[tid].GetAttributeIndices(ref attributeIndexArr);
                 for (int edgeIndex = 0; edgeIndex < TriangleEdgeCount; edgeIndex++)
                 {
                     if (errArr[edgeIndex] > threshold)

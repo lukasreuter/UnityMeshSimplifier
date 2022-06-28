@@ -34,7 +34,6 @@ namespace UnityMeshSimplifier
     /// Options for mesh simplification.
     /// </summary>
     [Serializable]
-    [StructLayout(LayoutKind.Auto)]
     public struct SimplificationOptions
     {
         /// <summary>
