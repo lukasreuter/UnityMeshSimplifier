@@ -43,6 +43,7 @@ SOFTWARE.
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.NotBurstCompatible;
@@ -78,9 +79,9 @@ namespace UnityMeshSimplifier
 
         private NativeList<Vector3> vertNormals;
         private NativeList<Vector4> vertTangents;
-        private UVChannels<Vector2> vertUV2D = null;
-        private UVChannels<Vector3> vertUV3D = null;
-        private UVChannels<Vector4> vertUV4D = null;
+        private UVChannels<Vector2> vertUV2D;
+        private UVChannels<Vector3> vertUV3D;
+        private UVChannels<Vector4> vertUV4D;
         private NativeList<Color> vertColors;
         private NativeList<BoneWeight> vertBoneWeights;
         private ResizableArray<BlendShapeContainer> blendShapes = null;
@@ -742,34 +743,31 @@ namespace UnityMeshSimplifier
             {
                 vertTangents[dst] = NormalizeTangent((vertTangents[i0] * barycentricCoord.x) + (vertTangents[i1] * barycentricCoord.y) + (vertTangents[i2] * barycentricCoord.z));
             }
-            if (vertUV2D != null)
+            if (vertUV2D.IsUsed)
             {
                 for (int i = 0; i < UVChannelCount; i++)
                 {
-                    var vertUV = vertUV2D[i];
-                    if (vertUV != null)
+                    if (vertUV2D.Get(i, out var vertUV))
                     {
                         vertUV[dst] = (vertUV[i0] * barycentricCoord.x) + (vertUV[i1] * barycentricCoord.y) + (vertUV[i2] * barycentricCoord.z);
                     }
                 }
             }
-            if (vertUV3D != null)
+            if (vertUV3D.IsUsed)
             {
                 for (int i = 0; i < UVChannelCount; i++)
                 {
-                    var vertUV = vertUV3D[i];
-                    if (vertUV != null)
+                    if (vertUV3D.Get(i, out var vertUV))
                     {
                         vertUV[dst] = (vertUV[i0] * barycentricCoord.x) + (vertUV[i1] * barycentricCoord.y) + (vertUV[i2] * barycentricCoord.z);
                     }
                 }
             }
-            if (vertUV4D != null)
+            if (vertUV4D.IsUsed)
             {
                 for (int i = 0; i < UVChannelCount; i++)
                 {
-                    var vertUV = vertUV4D[i];
-                    if (vertUV != null)
+                    if (vertUV4D.Get(i, out var vertUV))
                     {
                         vertUV[dst] = (vertUV[i0] * barycentricCoord.x) + (vertUV[i1] * barycentricCoord.y) + (vertUV[i2] * barycentricCoord.z);
                     }
@@ -794,10 +792,9 @@ namespace UnityMeshSimplifier
         #region Are UVs The Same
         private bool AreUVsTheSame(int channel, int indexA, int indexB)
         {
-            if (vertUV2D != null)
+            if (vertUV2D.IsUsed)
             {
-                var vertUV = vertUV2D[channel];
-                if (vertUV != null)
+                if (vertUV2D.Get(channel, out var vertUV))
                 {
                     var uvA = vertUV[indexA];
                     var uvB = vertUV[indexB];
@@ -805,10 +802,9 @@ namespace UnityMeshSimplifier
                 }
             }
 
-            if (vertUV3D != null)
+            if (vertUV3D.IsUsed)
             {
-                var vertUV = vertUV3D[channel];
-                if (vertUV != null)
+                if (vertUV3D.Get(channel, out var vertUV))
                 {
                     var uvA = vertUV[indexA];
                     var uvB = vertUV[indexB];
@@ -816,10 +812,9 @@ namespace UnityMeshSimplifier
                 }
             }
 
-            if (vertUV4D != null)
+            if (vertUV4D.IsUsed)
             {
-                var vertUV = vertUV4D[channel];
-                if (vertUV != null)
+                if (vertUV4D.Get(channel, out var vertUV))
                 {
                     var uvA = vertUV[indexA];
                     var uvB = vertUV[indexB];
@@ -1243,9 +1238,6 @@ namespace UnityMeshSimplifier
                 vertices[i].tcount = 0;
             }
 
-            var vertUV2D = (this.vertUV2D != null ? this.vertUV2D.Data : null);
-            var vertUV3D = (this.vertUV3D != null ? this.vertUV3D.Data : null);
-            var vertUV4D = (this.vertUV4D != null ? this.vertUV4D.Data : null);
             var blendShapes = (this.blendShapes != null ? this.blendShapes.Data : null);
 
             int lastSubMeshIndex = -1;
@@ -1333,34 +1325,31 @@ namespace UnityMeshSimplifier
                         vertices[dst].p = vert.p;
                         if (!this.vertNormals.IsEmpty) this.vertNormals[dst] = this.vertNormals[i];
                         if (!this.vertTangents.IsEmpty) this.vertTangents[dst] = this.vertTangents[i];
-                        if (vertUV2D != null)
+                        if (this.vertUV2D.IsUsed)
                         {
                             for (int j = 0; j < UVChannelCount; j++)
                             {
-                                var vertUV = vertUV2D[j];
-                                if (vertUV != null)
+                                if (vertUV2D.Get(j, out var vertUV))
                                 {
                                     vertUV[dst] = vertUV[i];
                                 }
                             }
                         }
-                        if (vertUV3D != null)
+                        if (this.vertUV3D.IsUsed)
                         {
                             for (int j = 0; j < UVChannelCount; j++)
                             {
-                                var vertUV = vertUV3D[j];
-                                if (vertUV != null)
+                                if (vertUV3D.Get(j, out var vertUV))
                                 {
                                     vertUV[dst] = vertUV[i];
                                 }
                             }
                         }
-                        if (vertUV4D != null)
+                        if (this.vertUV4D.IsUsed)
                         {
                             for (int j = 0; j < UVChannelCount; j++)
                             {
-                                var vertUV = vertUV4D[j];
-                                if (vertUV != null)
+                                if (vertUV4D.Get(j, out var vertUV))
                                 {
                                     vertUV[dst] = vertUV[i];
                                 }
@@ -1394,9 +1383,9 @@ namespace UnityMeshSimplifier
             this.vertices.Resize(vertexCount);
             if (!this.vertNormals.IsEmpty) this.vertNormals.Resize(vertexCount, NativeArrayOptions.ClearMemory);
             if (!this.vertTangents.IsEmpty) this.vertTangents.Resize(vertexCount, NativeArrayOptions.ClearMemory);
-            if (vertUV2D != null) this.vertUV2D.Resize(vertexCount, true);
-            if (vertUV3D != null) this.vertUV3D.Resize(vertexCount, true);
-            if (vertUV4D != null) this.vertUV4D.Resize(vertexCount, true);
+            if (this.vertUV2D.IsUsed) this.vertUV2D.Resize(vertexCount, true);
+            if (this.vertUV3D.IsUsed) this.vertUV3D.Resize(vertexCount, true);
+            if (this.vertUV4D.IsUsed) this.vertUV4D.Resize(vertexCount, true);
             if (!this.vertColors.IsEmpty) this.vertColors.Resize(vertexCount, NativeArrayOptions.ClearMemory);
             if (!this.vertBoneWeights.IsEmpty) this.vertBoneWeights.Resize(vertexCount, NativeArrayOptions.ClearMemory);
 
@@ -1629,9 +1618,9 @@ namespace UnityMeshSimplifier
             if (channel < 0 || channel >= UVChannelCount)
                 throw new ArgumentOutOfRangeException(nameof(channel));
 
-            if (vertUV2D != null && vertUV2D[channel] != null)
+            if (vertUV2D.IsUsed && vertUV2D.Get(channel, out var vertUV))
             {
-                return vertUV2D[channel].Data;
+                return vertUV.ToArrayNBC();
             }
             else
             {
@@ -1649,9 +1638,9 @@ namespace UnityMeshSimplifier
             if (channel < 0 || channel >= UVChannelCount)
                 throw new ArgumentOutOfRangeException(nameof(channel));
 
-            if (vertUV3D != null && vertUV3D[channel] != null)
+            if (vertUV3D.IsUsed && vertUV3D.Get(channel, out var vertUV))
             {
-                return vertUV3D[channel].Data;
+                return vertUV.ToArrayNBC();
             }
             else
             {
@@ -1669,9 +1658,9 @@ namespace UnityMeshSimplifier
             if (channel < 0 || channel >= UVChannelCount)
                 throw new ArgumentOutOfRangeException(nameof(channel));
 
-            if (vertUV4D != null && vertUV4D[channel] != null)
+            if (vertUV4D.IsUsed && vertUV4D.Get(channel, out var vertUV))
             {
-                return vertUV4D[channel].Data;
+                return vertUV.ToArrayNBC();
             }
             else
             {
@@ -1692,13 +1681,9 @@ namespace UnityMeshSimplifier
                 throw new ArgumentNullException(nameof(uvs));
 
             uvs.Clear();
-            if (vertUV2D != null && vertUV2D[channel] != null)
+            if (vertUV2D.IsUsed && vertUV2D.Get(channel, out var vertUV))
             {
-                var uvData = vertUV2D[channel].Data;
-                if (uvData != null)
-                {
-                    uvs.AddRange(uvData);
-                }
+                uvs.AddRange(vertUV.ToArrayNBC());
             }
         }
 
@@ -1715,13 +1700,9 @@ namespace UnityMeshSimplifier
                 throw new ArgumentNullException(nameof(uvs));
 
             uvs.Clear();
-            if (vertUV3D != null && vertUV3D[channel] != null)
+            if (vertUV3D.IsUsed && vertUV3D.Get(channel, out var vertUV))
             {
-                var uvData = vertUV3D[channel].Data;
-                if (uvData != null)
-                {
-                    uvs.AddRange(uvData);
-                }
+                uvs.AddRange(vertUV.ToArrayNBC());
             }
         }
 
@@ -1738,13 +1719,9 @@ namespace UnityMeshSimplifier
                 throw new ArgumentNullException(nameof(uvs));
 
             uvs.Clear();
-            if (vertUV4D != null && vertUV4D[channel] != null)
+            if (vertUV4D.IsUsed && vertUV4D.Get(channel, out var vertUV))
             {
-                var uvData = vertUV4D[channel].Data;
-                if (uvData != null)
-                {
-                    uvs.AddRange(uvData);
-                }
+                uvs.AddRange(vertUV.ToArrayNBC());
             }
         }
         #endregion
@@ -1762,39 +1739,27 @@ namespace UnityMeshSimplifier
 
             if (uvs != null && uvs.Count > 0)
             {
-                if (vertUV2D == null)
-                    vertUV2D = new UVChannels<Vector2>();
-
                 int uvCount = uvs.Count;
+                vertUV2D.MarkAsUsed(channel);
                 var uvSet = vertUV2D[channel];
-                if (uvSet != null)
-                {
-                    uvSet.Resize(uvCount);
-                }
-                else
-                {
-                    uvSet = new ResizableArray<Vector2>(uvCount, uvCount);
-                    vertUV2D[channel] = uvSet;
-                }
-
-                var uvData = uvSet.Data;
-                uvs.CopyTo(uvData, 0);
+                uvSet.Resize(uvCount, NativeArrayOptions.ClearMemory);
+                uvSet.CopyFromNBC(uvs.ToArray());
             }
             else
             {
-                if (vertUV2D != null)
+                if (vertUV2D.IsUsed)
                 {
-                    vertUV2D[channel] = null;
+                    vertUV2D.ClearChannel(channel);
                 }
             }
 
-            if (vertUV3D != null)
+            if (vertUV3D.IsUsed)
             {
-                vertUV3D[channel] = null;
+                vertUV3D.ClearChannel(channel);
             }
-            if (vertUV4D != null)
+            if (vertUV4D.IsUsed)
             {
-                vertUV4D[channel] = null;
+                vertUV4D.ClearChannel(channel);
             }
         }
 
@@ -1810,39 +1775,27 @@ namespace UnityMeshSimplifier
 
             if (uvs != null && uvs.Count > 0)
             {
-                if (vertUV3D == null)
-                    vertUV3D = new UVChannels<Vector3>();
-
                 int uvCount = uvs.Count;
+                vertUV3D.MarkAsUsed(channel);
                 var uvSet = vertUV3D[channel];
-                if (uvSet != null)
-                {
-                    uvSet.Resize(uvCount);
-                }
-                else
-                {
-                    uvSet = new ResizableArray<Vector3>(uvCount, uvCount);
-                    vertUV3D[channel] = uvSet;
-                }
-
-                var uvData = uvSet.Data;
-                uvs.CopyTo(uvData, 0);
+                uvSet.Resize(uvCount, NativeArrayOptions.ClearMemory);
+                uvSet.CopyFromNBC(uvs.ToArray());
             }
             else
             {
-                if (vertUV3D != null)
+                if (vertUV3D.IsUsed)
                 {
-                    vertUV3D[channel] = null;
+                    vertUV3D.ClearChannel(channel);
                 }
             }
 
-            if (vertUV2D != null)
+            if (vertUV2D.IsUsed)
             {
-                vertUV2D[channel] = null;
+                vertUV2D.ClearChannel(channel);
             }
-            if (vertUV4D != null)
+            if (vertUV4D.IsUsed)
             {
-                vertUV4D[channel] = null;
+                vertUV4D.ClearChannel(channel);
             }
         }
 
@@ -1858,39 +1811,27 @@ namespace UnityMeshSimplifier
 
             if (uvs != null && uvs.Count > 0)
             {
-                if (vertUV4D == null)
-                    vertUV4D = new UVChannels<Vector4>();
-
                 int uvCount = uvs.Count;
+                vertUV4D.MarkAsUsed(channel);
                 var uvSet = vertUV4D[channel];
-                if (uvSet != null)
-                {
-                    uvSet.Resize(uvCount);
-                }
-                else
-                {
-                    uvSet = new ResizableArray<Vector4>(uvCount, uvCount);
-                    vertUV4D[channel] = uvSet;
-                }
-
-                var uvData = uvSet.Data;
-                uvs.CopyTo(uvData, 0);
+                uvSet.Resize(uvCount, NativeArrayOptions.ClearMemory);
+                uvSet.CopyFromNBC(uvs.ToArray());
             }
             else
             {
-                if (vertUV4D != null)
+                if (vertUV4D.IsUsed)
                 {
-                    vertUV4D[channel] = null;
+                    vertUV4D.ClearChannel(channel);
                 }
             }
 
-            if (vertUV2D != null)
+            if (vertUV2D.IsUsed)
             {
-                vertUV2D[channel] = null;
+                vertUV2D.ClearChannel(channel);
             }
-            if (vertUV3D != null)
+            if (vertUV3D.IsUsed)
             {
-                vertUV3D[channel] = null;
+                vertUV3D.ClearChannel(channel);
             }
         }
 
@@ -1926,17 +1867,17 @@ namespace UnityMeshSimplifier
             }
             else
             {
-                if (vertUV2D != null)
+                if (vertUV2D.IsUsed)
                 {
-                    vertUV2D[channel] = null;
+                    vertUV2D.ClearChannel(channel);
                 }
-                if (vertUV3D != null)
+                if (vertUV3D.IsUsed)
                 {
-                    vertUV3D[channel] = null;
+                    vertUV3D.ClearChannel(channel);
                 }
-                if (vertUV4D != null)
+                if (vertUV4D.IsUsed)
                 {
-                    vertUV4D[channel] = null;
+                    vertUV4D.ClearChannel(channel);
                 }
             }
         }
@@ -2057,6 +1998,9 @@ namespace UnityMeshSimplifier
 
             triangles = new NativeList<Triangle>(allocator);
             refs = new NativeList<Ref>(allocator);
+            vertUV2D = new UVChannels<Vector2>(allocator);
+            vertUV3D = new UVChannels<Vector3>(allocator);
+            vertUV4D = new UVChannels<Vector4>(allocator);
 
             Vertices = mesh.vertices;
             InitializeVertexAttribute(mesh.normals, ref vertNormals, "normals", allocator);
@@ -2125,6 +2069,9 @@ namespace UnityMeshSimplifier
             vertTangents.Dispose();
             vertColors.Dispose();
             vertBoneWeights.Dispose();
+            vertUV2D.Dispose();
+            vertUV3D.Dispose();
+            vertUV4D.Dispose();
         }
         #endregion
 
@@ -2264,12 +2211,12 @@ namespace UnityMeshSimplifier
             List<Vector3>[] uvs3D = null;
             List<Vector4>[] uvs4D = null;
 
-            if (vertUV2D != null)
+            if (vertUV2D.IsUsed)
             {
                 uvs2D = new List<Vector2>[UVChannelCount];
                 for (int channel = 0; channel < UVChannelCount; channel++)
                 {
-                    if (vertUV2D[channel] != null)
+                    if (vertUV2D.Get(channel, out _))
                     {
                         var uvs = new List<Vector2>(verticesLocal.Length);
                         GetUVs(channel, uvs);
@@ -2278,12 +2225,12 @@ namespace UnityMeshSimplifier
                 }
             }
 
-            if (vertUV3D != null)
+            if (vertUV3D.IsUsed)
             {
                 uvs3D = new List<Vector3>[UVChannelCount];
                 for (int channel = 0; channel < UVChannelCount; channel++)
                 {
-                    if (vertUV3D[channel] != null)
+                    if (vertUV3D.Get(channel, out _))
                     {
                         var uvs = new List<Vector3>(verticesLocal.Length);
                         GetUVs(channel, uvs);
@@ -2292,12 +2239,12 @@ namespace UnityMeshSimplifier
                 }
             }
 
-            if (vertUV4D != null)
+            if (vertUV4D.IsUsed)
             {
                 uvs4D = new List<Vector4>[UVChannelCount];
                 for (int channel = 0; channel < UVChannelCount; channel++)
                 {
-                    if (vertUV4D[channel] != null)
+                    if (vertUV4D.Get(channel, out _))
                     {
                         var uvs = new List<Vector4>(verticesLocal.Length);
                         GetUVs(channel, uvs);
