@@ -30,14 +30,17 @@ namespace UnityMeshSimplifier.Internal
 {
     internal struct Ref
     {
-        public int tid;
-        public int tvertex;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Set(int tid, int tvertex)
-        {
-            this.tid = tid;
-            this.tvertex = tvertex;
-        }
+        public int tID;
+        public int tVertex;
     }
+
+internal static class RefExtensions
+{
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Set(this ref Ref r, int tid, int tVertex)
+    {
+        r.tID = tid;
+        r.tVertex = tVertex;
+    }
+}
 }

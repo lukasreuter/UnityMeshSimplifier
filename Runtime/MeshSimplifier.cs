@@ -73,7 +73,7 @@ namespace UnityMeshSimplifier
         private int[] subMeshOffsets = null;
         private NativeList<Triangle> triangles;
         private ResizableArray<Vertex> vertices = null;
-        private ResizableArray<Ref> refs = null;
+        private NativeList<Ref> refs;
 
         private ResizableArray<Vector3> vertNormals = null;
         private ResizableArray<Vector4> vertTangents = null;
@@ -443,7 +443,6 @@ namespace UnityMeshSimplifier
         public MeshSimplifier()
         {
             vertices = new ResizableArray<Vertex>(0);
-            refs = new ResizableArray<Ref>(0);
         }
 
         /// <summary>
@@ -638,18 +637,17 @@ namespace UnityMeshSimplifier
         private bool Flipped(ref Vector3d p, int i0, int i1, ref Vertex v0, bool[] deleted)
         {
             int tcount = v0.tcount;
-            var refs = this.refs.Data;
             var triangles = this.triangles;
             var vertices = this.vertices.Data;
             for (int k = 0; k < tcount; k++)
             {
-                Ref r = refs[v0.tstart + k];
-                if (triangles[r.tid].deleted)
+                Ref r = this.refs[v0.tstart + k];
+                if (triangles[r.tID].deleted)
                     continue;
 
-                int s = r.tvertex;
-                int id1 = triangles[r.tid][(s + 1) % 3];
-                int id2 = triangles[r.tid][(s + 2) % 3];
+                int s = r.tVertex;
+                int id1 = triangles[r.tID][(s + 1) % 3];
+                int id2 = triangles[r.tID][(s + 2) % 3];
                 if (id1 == i1 || id2 == i1)
                 {
                     deleted[k] = true;
@@ -668,7 +666,7 @@ namespace UnityMeshSimplifier
                 Vector3d.Cross(ref d1, ref d2, out n);
                 n.Normalize();
                 deleted[k] = false;
-                dot = math.dot(n, triangles[r.tid].n);
+                dot = math.dot(n, triangles[r.tID].n);
                 if (dot < 0.2)
                     return true;
             }
@@ -689,7 +687,7 @@ namespace UnityMeshSimplifier
             for (int k = 0; k < tcount; k++)
             {
                 Ref r = refs[v.tstart + k];
-                int tid = r.tid;
+                int tid = r.tID;
                 Triangle t = this.triangles[tid];
                 if (t.deleted)
                     continue;
@@ -702,10 +700,10 @@ namespace UnityMeshSimplifier
                     continue;
                 }
 
-                t[r.tvertex] = i0;
+                t[r.tVertex] = i0;
                 if (ia0 != -1)
                 {
-                    t.SetAttributeIndex(r.tvertex, ia0);
+                    t.SetAttributeIndex(r.tVertex, ia0);
                 }
 
                 t.dirty = true;
@@ -906,8 +904,8 @@ namespace UnityMeshSimplifier
                         // save ram
                         if (tcount > 0)
                         {
-                            var refsArr = refs.Data;
-                            Array.Copy(refsArr, tstart, refsArr, vertices[i0].tstart, tcount);
+                            NativeArray<Ref>.Copy(refs, tstart, refs, vertices[i0].tstart, tcount);
+                            // Array.Copy(refsArr, tstart, refsArr, vertices[i0].tstart, tcount);
                         }
                     }
                     else
@@ -963,8 +961,6 @@ namespace UnityMeshSimplifier
             // Identify boundary : vertices[].border=0,1
             if (iteration == 0)
             {
-                var refs = this.refs.Data;
-
                 var vcount = new List<int>(8);
                 var vids = new List<int>(8);
                 int vsize = 0;
@@ -991,7 +987,7 @@ namespace UnityMeshSimplifier
 
                     for (int j = 0; j < tcount; j++)
                     {
-                        int tid = refs[tstart + j].tid;
+                        int tid = this.refs[tstart + j].tID;
                         for (int k = 0; k < TriangleVertexCount; k++)
                         {
                             ofs = 0;
@@ -1106,9 +1102,9 @@ namespace UnityMeshSimplifier
                                 int otherTriangleStart = vertices[otherIndex].tstart;
                                 for (int k = 0; k < otherTriangleCount; k++)
                                 {
-                                    var r = refs[otherTriangleStart + k];
-                                    ref var triangle = ref triangles.ElementAt(r.tid);
-                                    triangle[r.tvertex] = myIndex;
+                                    var r = this.refs[otherTriangleStart + k];
+                                    ref var triangle = ref triangles.ElementAt(r.tID);
+                                    triangle[r.tVertex] = myIndex;
                                 }
                             }
                         }
@@ -1196,8 +1192,7 @@ namespace UnityMeshSimplifier
             }
 
             // Write References
-            this.refs.Resize(tstart);
-            var refs = this.refs.Data;
+            this.refs.Resize(tstart, NativeArrayOptions.ClearMemory);
             for (int i = 0; i < triangleCount; i++)
             {
                 int v0 = this.triangles[i].v0;
@@ -1210,9 +1205,12 @@ namespace UnityMeshSimplifier
                 int start2 = vertices[v2].tstart;
                 int count2 = vertices[v2].tcount++;
 
-                refs[start0 + count0].Set(i, 0);
-                refs[start1 + count1].Set(i, 1);
-                refs[start2 + count2].Set(i, 2);
+                ref var r0 = ref this.refs.ElementAt(start0 + count0);
+                ref var r1 = ref this.refs.ElementAt(start1 + count1);
+                ref var r2 = ref this.refs.ElementAt(start2 + count2);
+                r0.Set(i, 0);
+                r1.Set(i, 1);
+                r2.Set(i, 2);
             }
         }
         #endregion
@@ -1439,7 +1437,7 @@ namespace UnityMeshSimplifier
 
             for (int a = startIndex; a < startIndex + trianglesCount; a++)
             {
-                tris.Add(triangles[refs[a].tid]);
+                tris.Add(triangles[refs[a].tID]);
             }
         }
 
@@ -1451,7 +1449,7 @@ namespace UnityMeshSimplifier
 
             for (int refIndex = startIndex; refIndex < (startIndex + triangleCount); refIndex++)
             {
-                int tid = refs[refIndex].tid;
+                int tid = refs[refIndex].tID;
                 Triangle tri = triangles[tid];
 
                 if (vertices[tri.v0].index == vert1.index ||
@@ -2048,6 +2046,7 @@ namespace UnityMeshSimplifier
                 throw new ArgumentNullException(nameof(mesh));
 
             triangles = new NativeList<Triangle>(allocator);
+            refs = new NativeList<Ref>(allocator);
 
             this.Vertices = mesh.vertices;
             this.Normals = mesh.normals;
@@ -2111,6 +2110,7 @@ namespace UnityMeshSimplifier
         public void Dispose()
         {
             triangles.Dispose();
+            refs.Dispose();
         }
         #endregion
 
