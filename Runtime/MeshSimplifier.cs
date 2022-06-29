@@ -95,8 +95,8 @@ namespace UnityMeshSimplifier
         // Pre-allocated buffers
         private NativeParallelHashSet<Triangle> triangleHashSet1;
         private NativeParallelHashSet<Triangle> triangleHashSet2;
-        private FixedArray3<double> errArr;
-        private FixedArray3<int> attributeIndexArr;
+        private double3 errArr;
+        private int3 attributeIndexArr;
         #endregion
 
         #region Properties

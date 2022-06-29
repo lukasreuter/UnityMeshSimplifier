@@ -26,6 +26,7 @@ SOFTWARE.
 
 using System;
 using System.Runtime.CompilerServices;
+using Unity.Mathematics;
 
 namespace UnityMeshSimplifier.Internal
 {
@@ -105,7 +106,7 @@ namespace UnityMeshSimplifier.Internal
 
         #region Public Methods
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly void GetAttributeIndices(ref FixedArray3<int> attributeIndices)
+        public readonly void GetAttributeIndices(ref int3 attributeIndices)
         {
             attributeIndices[0] = va0;
             attributeIndices[1] = va1;
@@ -132,7 +133,7 @@ namespace UnityMeshSimplifier.Internal
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public readonly void GetErrors(ref FixedArray3<double> err)
+        public readonly void GetErrors(ref double3 err)
         {
             err[0] = err0;
             err[1] = err1;
