@@ -611,21 +611,15 @@ namespace UnityMeshSimplifier
 
         public static Mesh SimplifyMesh(Mesh mesh, float quality, in SimplificationOptions options)
         {
-#warning convert this to a job instead
             using var meshSimplifier = new MeshSimplifier(mesh, Allocator.TempJob)
             {
                 Quality = quality,
                 SimplificationOptions = options,
             };
-            // meshSimplifier.SimplificationOptions = options;
-            // meshSimplifier.Initialize(mesh, Allocator.TempJob);
-#warning optimize this (heaviest callstack)
-            meshSimplifier.SimplifyMesh();
-            // meshSimplifier.Run();
+            meshSimplifier.Run();
 
             var simplifiedMesh = meshSimplifier.ToMesh();
             simplifiedMesh.bindposes = mesh.bindposes;
-
             return simplifiedMesh;
         }
 
