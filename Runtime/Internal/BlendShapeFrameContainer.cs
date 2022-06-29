@@ -24,24 +24,49 @@ SOFTWARE.
 */
 #endregion
 
+using System;
 using System.Runtime.CompilerServices;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace UnityMeshSimplifier.Internal
 {
-    internal class BlendShapeFrameContainer
+    internal struct BlendShapeFrameContainer : IDisposable
     {
         private readonly float frameWeight;
-        private readonly ResizableArray<Vector3> deltaVertices;
-        private readonly ResizableArray<Vector3> deltaNormals;
-        private readonly ResizableArray<Vector3> deltaTangents;
+        // never return the unsafe lists, only as pointers never as copies
+        private UnsafeList<Vector3> deltaVertices;
+        private UnsafeList<Vector3> deltaNormals;
+        private UnsafeList<Vector3> deltaTangents;
 
-        public BlendShapeFrameContainer(BlendShapeFrame frame)
+        public BlendShapeFrameContainer(BlendShapeFrame frame, Allocator allocator)
         {
             frameWeight = frame.FrameWeight;
-            deltaVertices = new ResizableArray<Vector3>(frame.DeltaVertices);
-            deltaNormals = new ResizableArray<Vector3>(frame.DeltaNormals);
-            deltaTangents = new ResizableArray<Vector3>(frame.DeltaTangents);
+            deltaVertices = new UnsafeList<Vector3>(frame.DeltaVertices.Length, allocator);
+            foreach (var deltaVertex in frame.DeltaVertices)
+            {
+                deltaVertices.Add(deltaVertex);
+            }
+
+            deltaNormals = new UnsafeList<Vector3>(frame.DeltaNormals.Length, allocator);
+            foreach (var deltaNormal in frame.DeltaNormals)
+            {
+                deltaNormals.Add(deltaNormal);
+            }
+
+            deltaTangents = new UnsafeList<Vector3>(frame.DeltaTangents.Length, allocator);
+            foreach (var deltaTangent in frame.DeltaTangents)
+            {
+                deltaTangents.Add(deltaTangent);
+            }
+        }
+
+        public void Dispose()
+        {
+            deltaVertices.Dispose();
+            deltaNormals.Dispose();
+            deltaTangents.Dispose();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -60,18 +85,18 @@ namespace UnityMeshSimplifier.Internal
             deltaTangents[dst] = Vector3.Normalize((deltaTangents[i0] * barycentricCoord.x) + (deltaTangents[i1] * barycentricCoord.y) + (deltaTangents[i2] * barycentricCoord.z));
         }
 
-        public void Resize(int length, bool trimExess = false)
+        public void Resize(int length, bool trimExcess = false)
         {
-            deltaVertices.Resize(length, trimExess);
-            deltaNormals.Resize(length, trimExess);
-            deltaTangents.Resize(length, trimExess);
+            deltaVertices.Resize(length, NativeArrayOptions.ClearMemory);
+            deltaNormals.Resize(length, NativeArrayOptions.ClearMemory);
+            deltaTangents.Resize(length, NativeArrayOptions.ClearMemory);
         }
 
         public BlendShapeFrame ToBlendShapeFrame()
         {
-            var resultVertices = deltaVertices.ToArray();
-            var resultNormals = deltaNormals.ToArray();
-            var resultTangents = deltaTangents.ToArray();
+            var resultVertices = deltaVertices.ToArrayNBC();
+            var resultNormals = deltaNormals.ToArrayNBC();
+            var resultTangents = deltaTangents.ToArrayNBC();
             return new BlendShapeFrame(frameWeight, resultVertices, resultNormals, resultTangents);
         }
     }

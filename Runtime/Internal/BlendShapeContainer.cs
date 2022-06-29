@@ -24,24 +24,40 @@ SOFTWARE.
 */
 #endregion
 
+using System;
 using System.Runtime.CompilerServices;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace UnityMeshSimplifier.Internal
 {
-    internal class BlendShapeContainer
+    internal struct BlendShapeContainer : IDisposable
     {
-        private readonly string shapeName;
-        private readonly BlendShapeFrameContainer[] frames;
+        private readonly FixedString4096Bytes shapeName;
+        // never return the unsafe list, only as pointers never as copies
+        private UnsafeList<BlendShapeFrameContainer> frames;
 
-        public BlendShapeContainer(BlendShape blendShape)
+        public BlendShapeContainer(BlendShape blendShape, Allocator allocator)
         {
-            shapeName = blendShape.ShapeName;
-            frames = new BlendShapeFrameContainer[blendShape.Frames.Length];
+            shapeName = new FixedString4096Bytes(blendShape.ShapeName);
+            frames = new UnsafeList<BlendShapeFrameContainer>(blendShape.Frames.Length, allocator);
+
+            var length = blendShape.Frames.Length;
+            for (int i = 0; i < length; i++)
+            {
+                frames.Add(new BlendShapeFrameContainer(blendShape.Frames[i], allocator));
+            }
+        }
+
+        public void Dispose()
+        {
             for (int i = 0; i < frames.Length; i++)
             {
-                frames[i] = new BlendShapeFrameContainer(blendShape.Frames[i]);
+                frames[i].Dispose();
             }
+
+            frames.Dispose();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -62,11 +78,11 @@ namespace UnityMeshSimplifier.Internal
             }
         }
 
-        public void Resize(int length, bool trimExess = false)
+        public void Resize(int length, bool trimExcess = false)
         {
             for (int i = 0; i < frames.Length; i++)
             {
-                frames[i].Resize(length, trimExess);
+                frames[i].Resize(length, trimExcess);
             }
         }
 
@@ -77,7 +93,7 @@ namespace UnityMeshSimplifier.Internal
             {
                 shapeFrames[i] = frames[i].ToBlendShapeFrame();
             }
-            return new BlendShape(shapeName, shapeFrames);
+            return new BlendShape(shapeName.ToString(), shapeFrames);
         }
     }
 }
