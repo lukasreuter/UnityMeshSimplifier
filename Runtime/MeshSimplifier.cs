@@ -57,9 +57,9 @@ namespace UnityMeshSimplifier
 {
     /// <summary>
     /// The mesh simplifier.
-    /// Deeply based on https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification but rewritten completely in C#.
+    /// Deeply based on https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification but rewritten completely in HPC#.
     /// </summary>
-    [BurstCompile]
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Fast, CompileSynchronously = true, OptimizeFor = OptimizeFor.Performance, DisableSafetyChecks = true)]
     public struct MeshSimplifier : IDisposable, IJob
     {
         #region Consts & Static Read-Only
