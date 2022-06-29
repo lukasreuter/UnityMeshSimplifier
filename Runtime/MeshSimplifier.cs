@@ -74,7 +74,7 @@ namespace UnityMeshSimplifier
         private int subMeshCount = 0;
         private int[] subMeshOffsets = null;
         private NativeList<Triangle> triangles;
-        private ResizableArray<Vertex> vertices = null;
+        private NativeList<Vertex> vertices;
         private NativeList<Ref> refs;
 
         private NativeList<Vector3> vertNormals;
@@ -276,13 +276,12 @@ namespace UnityMeshSimplifier
             get
             {
                 int vertexCount = this.vertices.Length;
-                var vertices = new Vector3[vertexCount];
-                var vertArr = this.vertices.Data;
+                var verts = new Vector3[vertexCount];
                 for (int i = 0; i < vertexCount; i++)
                 {
-                    vertices[i] = (Vector3)vertArr[i].p;
+                    verts[i] = (Vector3)this.vertices[i].p;
                 }
-                return vertices;
+                return verts;
             }
             set
             {
@@ -293,11 +292,10 @@ namespace UnityMeshSimplifier
                 {
                     bindposes.Clear();
                 }
-                vertices.Resize(value.Length);
-                var vertArr = vertices.Data;
+                vertices.Resize(value.Length, NativeArrayOptions.ClearMemory);
                 for (int i = 0; i < value.Length; i++)
                 {
-                    vertArr[i] = new Vertex(i, value[i]);
+                    vertices[i] = new Vertex(i, value[i]);
                 }
             }
         }
@@ -435,7 +433,6 @@ namespace UnityMeshSimplifier
         /// </summary>
         public MeshSimplifier()
         {
-            vertices = new ResizableArray<Vertex>(0);
         }
 
         /// <summary>
@@ -655,26 +652,24 @@ namespace UnityMeshSimplifier
         private bool Flipped(ref Vector3d p, int i0, int i1, ref Vertex v0, bool[] deleted)
         {
             int tcount = v0.tcount;
-            var triangles = this.triangles;
-            var vertices = this.vertices.Data;
             for (int k = 0; k < tcount; k++)
             {
                 Ref r = this.refs[v0.tstart + k];
-                if (triangles[r.tID].deleted)
+                if (this.triangles[r.tID].deleted)
                     continue;
 
                 int s = r.tVertex;
-                int id1 = triangles[r.tID][(s + 1) % 3];
-                int id2 = triangles[r.tID][(s + 2) % 3];
+                int id1 = this.triangles[r.tID][(s + 1) % 3];
+                int id2 = this.triangles[r.tID][(s + 2) % 3];
                 if (id1 == i1 || id2 == i1)
                 {
                     deleted[k] = true;
                     continue;
                 }
 
-                Vector3d d1 = vertices[id1].p - p;
+                Vector3d d1 = this.vertices[id1].p - p;
                 d1.Normalize();
-                Vector3d d2 = vertices[id2].p - p;
+                Vector3d d2 = this.vertices[id2].p - p;
                 d2.Normalize();
                 double dot = Vector3d.Dot(ref d1, ref d2);
                 if (Math.Abs(dot) > 0.999)
@@ -684,7 +679,7 @@ namespace UnityMeshSimplifier
                 Vector3d.Cross(ref d1, ref d2, out n);
                 n.Normalize();
                 deleted[k] = false;
-                dot = math.dot(n, triangles[r.tID].n);
+                dot = math.dot(n, this.triangles[r.tID].n);
                 if (dot < 0.2)
                     return true;
             }
@@ -701,7 +696,6 @@ namespace UnityMeshSimplifier
         {
             Vector3d p;
             int tcount = v.tcount;
-            var vertices = this.vertices.Data;
             for (int k = 0; k < tcount; k++)
             {
                 Ref r = refs[v.tstart + k];
@@ -725,9 +719,9 @@ namespace UnityMeshSimplifier
                 }
 
                 t.dirty = true;
-                t.err0 = CalculateError(ref vertices[t.v0], ref vertices[t.v1], out p);
-                t.err1 = CalculateError(ref vertices[t.v1], ref vertices[t.v2], out p);
-                t.err2 = CalculateError(ref vertices[t.v2], ref vertices[t.v0], out p);
+                t.err0 = CalculateError(ref this.vertices.ElementAt(t.v0), ref this.vertices.ElementAt(t.v1), out p);
+                t.err1 = CalculateError(ref this.vertices.ElementAt(t.v1), ref this.vertices.ElementAt(t.v2), out p);
+                t.err2 = CalculateError(ref this.vertices.ElementAt(t.v2), ref this.vertices.ElementAt(t.v0), out p);
                 t.err3 = MathHelper.Min(t.err0, t.err1, t.err2);
                 this.triangles[tid] = t;
                 refs.Add(r);
@@ -836,7 +830,6 @@ namespace UnityMeshSimplifier
         private void RemoveVertexPass(int startTrisCount, int targetTrisCount, double threshold, ResizableArray<bool> deleted0, ResizableArray<bool> deleted1, ref int deletedTris)
         {
             int triangleCount = this.triangles.Length;
-            var vertices = this.vertices.Data;
 
             Vector3d p;
             Vector3 barycentricCoord;
@@ -857,43 +850,47 @@ namespace UnityMeshSimplifier
                     int i1 = this.triangles[tid][nextEdgeIndex];
 
                     // Border check
-                    if (vertices[i0].borderEdge != vertices[i1].borderEdge)
+                    if (this.vertices[i0].borderEdge != this.vertices[i1].borderEdge)
                         continue;
                     // Seam check
-                    else if (vertices[i0].uvSeamEdge != vertices[i1].uvSeamEdge)
+                    else if (this.vertices[i0].uvSeamEdge != this.vertices[i1].uvSeamEdge)
                         continue;
                     // Foldover check
-                    else if (vertices[i0].uvFoldoverEdge != vertices[i1].uvFoldoverEdge)
+                    else if (this.vertices[i0].uvFoldoverEdge != this.vertices[i1].uvFoldoverEdge)
                         continue;
                     // If borders should be preserved
-                    else if (simplificationOptions.PreserveBorderEdges && vertices[i0].borderEdge)
+                    else if (simplificationOptions.PreserveBorderEdges && this.vertices[i0].borderEdge)
                         continue;
                     // If seams should be preserved
-                    else if (simplificationOptions.PreserveUVSeamEdges && vertices[i0].uvSeamEdge)
+                    else if (simplificationOptions.PreserveUVSeamEdges && this.vertices[i0].uvSeamEdge)
                         continue;
                     // If foldovers should be preserved
-                    else if (simplificationOptions.PreserveUVFoldoverEdges && vertices[i0].uvFoldoverEdge)
+                    else if (simplificationOptions.PreserveUVFoldoverEdges && this.vertices[i0].uvFoldoverEdge)
                         continue;
 
                     // Compute vertex to collapse to
-                    CalculateError(ref vertices[i0], ref vertices[i1], out p);
-                    deleted0.Resize(vertices[i0].tcount); // normals temporarily
-                    deleted1.Resize(vertices[i1].tcount); // normals temporarily
+                    CalculateError(ref this.vertices.ElementAt(i0), ref this.vertices.ElementAt(i1), out p);
+                    deleted0.Resize(this.vertices[i0].tcount); // normals temporarily
+                    deleted1.Resize(this.vertices[i1].tcount); // normals temporarily
 
                     // Don't remove if flipped
-                    if (Flipped(ref p, i0, i1, ref vertices[i0], deleted0.Data))
+                    if (Flipped(ref p, i0, i1, ref this.vertices.ElementAt(i0), deleted0.Data))
                         continue;
-                    if (Flipped(ref p, i1, i0, ref vertices[i1], deleted1.Data))
+                    if (Flipped(ref p, i1, i0, ref this.vertices.ElementAt(i1), deleted1.Data))
                         continue;
 
                     // Calculate the barycentric coordinates within the triangle
                     int nextNextEdgeIndex = ((edgeIndex + 2) % 3);
                     int i2 = this.triangles[tid][nextNextEdgeIndex];
-                    CalculateBarycentricCoords(ref p, ref vertices[i0].p, ref vertices[i1].p, ref vertices[i2].p, out barycentricCoord);
+                    CalculateBarycentricCoords(ref p, ref this.vertices.ElementAt(i0).p, ref this.vertices.ElementAt(i1).p,
+                        ref this.vertices.ElementAt(i2).p, out barycentricCoord);
 
                     // Not flipped, so remove edge
-                    vertices[i0].p = p;
-                    vertices[i0].q += vertices[i1].q;
+                    {
+                        ref var vertex = ref this.vertices.ElementAt(i0);
+                        vertex.p = p;
+                        vertex.q += this.vertices[i1].q;
+                    }
 
                     // Interpolate the vertex attributes
                     int ia0 = attributeIndexArr[edgeIndex];
@@ -901,32 +898,34 @@ namespace UnityMeshSimplifier
                     int ia2 = attributeIndexArr[nextNextEdgeIndex];
                     InterpolateVertexAttributes(ia0, ia0, ia1, ia2, ref barycentricCoord);
 
-                    if (vertices[i0].uvSeamEdge)
+                    if (this.vertices[i0].uvSeamEdge)
                     {
                         ia0 = -1;
                     }
 
                     int tstart = refs.Length;
-                    UpdateTriangles(i0, ia0, ref vertices[i0], deleted0, ref deletedTris);
-                    UpdateTriangles(i0, ia0, ref vertices[i1], deleted1, ref deletedTris);
+                    UpdateTriangles(i0, ia0, ref this.vertices.ElementAt(i0), deleted0, ref deletedTris);
+                    UpdateTriangles(i0, ia0, ref this.vertices.ElementAt(i1), deleted1, ref deletedTris);
 
                     int tcount = refs.Length - tstart;
-                    if (tcount <= vertices[i0].tcount)
+                    if (tcount <= this.vertices[i0].tcount)
                     {
                         // save ram
                         if (tcount > 0)
                         {
-                            NativeArray<Ref>.Copy(refs, tstart, refs, vertices[i0].tstart, tcount);
+                            NativeArray<Ref>.Copy(refs, tstart, refs, this.vertices[i0].tstart, tcount);
                             // Array.Copy(refsArr, tstart, refsArr, vertices[i0].tstart, tcount);
                         }
                     }
                     else
                     {
                         // append
-                        vertices[i0].tstart = tstart;
+                        ref var v0 = ref this.vertices.ElementAt(i0);
+                        v0.tstart = tstart;
                     }
 
-                    vertices[i0].tcount = tcount;
+                    ref var vert = ref this.vertices.ElementAt(i0);
+                    vert.tcount = tcount;
                     break;
                 }
 
@@ -944,8 +943,6 @@ namespace UnityMeshSimplifier
         /// <param name="iteration">The iteration index.</param>
         private void UpdateMesh(int iteration)
         {
-            var vertices = this.vertices.Data;
-
             int triangleCount = triangles.Length;
             int vertexCount = this.vertices.Length;
             if (iteration > 0) // compact triangles
@@ -978,9 +975,10 @@ namespace UnityMeshSimplifier
                 int vsize = 0;
                 for (int i = 0; i < vertexCount; i++)
                 {
-                    vertices[i].borderEdge = false;
-                    vertices[i].uvSeamEdge = false;
-                    vertices[i].uvFoldoverEdge = false;
+                    ref var vertex = ref this.vertices.ElementAt(i);
+                    vertex.borderEdge = false;
+                    vertex.uvSeamEdge = false;
+                    vertex.uvFoldoverEdge = false;
                 }
 
                 int ofs;
@@ -991,8 +989,8 @@ namespace UnityMeshSimplifier
                 var vertexLinkDistanceSqr = simplificationOptions.VertexLinkDistance * simplificationOptions.VertexLinkDistance;
                 for (int i = 0; i < vertexCount; i++)
                 {
-                    int tstart = vertices[i].tstart;
-                    int tcount = vertices[i].tcount;
+                    int tstart = this.vertices[i].tstart;
+                    int tcount = this.vertices[i].tcount;
                     vcount.Clear();
                     vids.Clear();
                     vsize = 0;
@@ -1030,18 +1028,19 @@ namespace UnityMeshSimplifier
                         if (vcount[j] == 1)
                         {
                             id = vids[j];
-                            vertices[id].borderEdge = true;
+                            ref var vertex = ref this.vertices.ElementAt(id);
+                            vertex.borderEdge = true;
                             ++borderVertexCount;
 
                             if (simplificationOptions.EnableSmartLink)
                             {
-                                if (vertices[id].p.x < borderMinX)
+                                if (vertex.p.x < borderMinX)
                                 {
-                                    borderMinX = vertices[id].p.x;
+                                    borderMinX = vertex.p.x;
                                 }
-                                if (vertices[id].p.x > borderMaxX)
+                                if (vertex.p.x > borderMaxX)
                                 {
-                                    borderMaxX = vertices[id].p.x;
+                                    borderMaxX = vertex.p.x;
                                 }
                             }
                         }
@@ -1056,9 +1055,9 @@ namespace UnityMeshSimplifier
                     double borderAreaWidth = borderMaxX - borderMinX;
                     for (int i = 0; i < vertexCount; i++)
                     {
-                        if (vertices[i].borderEdge)
+                        if (this.vertices[i].borderEdge)
                         {
-                            int vertexHash = (int)(((((vertices[i].p.x - borderMinX) / borderAreaWidth) * 2.0) - 1.0) * int.MaxValue);
+                            int vertexHash = (int)(((((this.vertices[i].p.x - borderMinX) / borderAreaWidth) * 2.0) - 1.0) * int.MaxValue);
                             borderVertices[borderIndexCount] = new BorderVertex(i, vertexHash);
                             ++borderIndexCount;
                         }
@@ -1078,7 +1077,7 @@ namespace UnityMeshSimplifier
                         if (myIndex == -1)
                             continue;
 
-                        var myPoint = vertices[myIndex].p;
+                        var myPoint = this.vertices[myIndex].p;
                         for (int j = i + 1; j < borderIndexCount; j++)
                         {
                             int otherIndex = borderVertices[j].index;
@@ -1087,7 +1086,7 @@ namespace UnityMeshSimplifier
                             else if ((borderVertices[j].hash - borderVertices[i].hash) > hashMaxDistance) // There is no point to continue beyond this point
                                 break;
 
-                            var otherPoint = vertices[otherIndex].p;
+                            var otherPoint = this.vertices[otherIndex].p;
                             var sqrX = ((myPoint.x - otherPoint.x) * (myPoint.x - otherPoint.x));
                             var sqrY = ((myPoint.y - otherPoint.y) * (myPoint.y - otherPoint.y));
                             var sqrZ = ((myPoint.z - otherPoint.z) * (myPoint.z - otherPoint.z));
@@ -1096,22 +1095,24 @@ namespace UnityMeshSimplifier
                             if (sqrMagnitude <= vertexLinkDistanceSqr)
                             {
                                 borderVertices[j].index = -1; // NOTE: This makes sure that the "other" vertex is not processed again
-                                vertices[myIndex].borderEdge = false;
-                                vertices[otherIndex].borderEdge = false;
+                                ref var myVertex = ref this.vertices.ElementAt(myIndex);
+                                myVertex.borderEdge = false;
+                                ref var otherVertex = ref vertices.ElementAt(otherIndex);
+                                otherVertex.borderEdge = false;
 
                                 if (AreUVsTheSame(0, myIndex, otherIndex))
                                 {
-                                    vertices[myIndex].uvFoldoverEdge = true;
-                                    vertices[otherIndex].uvFoldoverEdge = true;
+                                    myVertex.uvFoldoverEdge = true;
+                                    otherVertex.uvFoldoverEdge = true;
                                 }
                                 else
                                 {
-                                    vertices[myIndex].uvSeamEdge = true;
-                                    vertices[otherIndex].uvSeamEdge = true;
+                                    myVertex.uvSeamEdge = true;
+                                    otherVertex.uvSeamEdge = true;
                                 }
 
-                                int otherTriangleCount = vertices[otherIndex].tcount;
-                                int otherTriangleStart = vertices[otherIndex].tstart;
+                                int otherTriangleCount = this.vertices[otherIndex].tcount;
+                                int otherTriangleStart = this.vertices[otherIndex].tstart;
                                 for (int k = 0; k < otherTriangleCount; k++)
                                 {
                                     var r = this.refs[otherTriangleStart + k];
@@ -1133,22 +1134,22 @@ namespace UnityMeshSimplifier
                 // but mostly improves the result for closed meshes
                 for (int i = 0; i < vertexCount; i++)
                 {
-                    vertices[i].q = new SymmetricMatrix();
+                    ref var vertex = ref this.vertices.ElementAt(i);
+                    vertex.q = new SymmetricMatrix();
                 }
 
-                int v0, v1, v2;
                 Vector3d n, p0, p1, p2, p10, p20, dummy;
                 SymmetricMatrix sm;
                 for (int i = 0; i < triangleCount; i++)
                 {
                     ref var triangle = ref triangles.ElementAt(i);
-                    v0 = triangle.v0;
-                    v1 = triangle.v1;
-                    v2 = triangle.v2;
+                    ref var v0 = ref this.vertices.ElementAt(triangle.v0);
+                    ref var v1 = ref this.vertices.ElementAt(triangle.v1);
+                    ref var v2 = ref this.vertices.ElementAt(triangle.v2);
 
-                    p0 = vertices[v0].p;
-                    p1 = vertices[v1].p;
-                    p2 = vertices[v2].p;
+                    p0 = v0.p;
+                    p1 = v1.p;
+                    p2 = v2.p;
                     p10 = p1 - p0;
                     p20 = p2 - p0;
                     Vector3d.Cross(ref p10, ref p20, out n);
@@ -1156,18 +1157,18 @@ namespace UnityMeshSimplifier
                     triangle.n = n;
 
                     sm = new SymmetricMatrix(n.x, n.y, n.z, -Vector3d.Dot(ref n, ref p0));
-                    vertices[v0].q += sm;
-                    vertices[v1].q += sm;
-                    vertices[v2].q += sm;
+                    v0.q += sm;
+                    v1.q += sm;
+                    v2.q += sm;
                 }
 
                 for (int i = 0; i < triangleCount; i++)
                 {
                     // Calc Edge Error
                     ref var triangle = ref triangles.ElementAt(i);
-                    triangle.err0 = CalculateError(ref vertices[triangle.v0], ref vertices[triangle.v1], out dummy);
-                    triangle.err1 = CalculateError(ref vertices[triangle.v1], ref vertices[triangle.v2], out dummy);
-                    triangle.err2 = CalculateError(ref vertices[triangle.v2], ref vertices[triangle.v0], out dummy);
+                    triangle.err0 = CalculateError(ref this.vertices.ElementAt(triangle.v0), ref this.vertices.ElementAt(triangle.v1), out dummy);
+                    triangle.err1 = CalculateError(ref this.vertices.ElementAt(triangle.v1), ref this.vertices.ElementAt(triangle.v2), out dummy);
+                    triangle.err2 = CalculateError(ref this.vertices.ElementAt(triangle.v2), ref this.vertices.ElementAt(triangle.v0), out dummy);
                     triangle.err3 = MathHelper.Min(triangles[i].err0, triangles[i].err1, triangles[i].err2);
                 }
             }
@@ -1179,28 +1180,32 @@ namespace UnityMeshSimplifier
         {
             int triangleCount = this.triangles.Length;
             int vertexCount = this.vertices.Length;
-            var vertices = this.vertices.Data;
 
             // Init Reference ID list
             for (int i = 0; i < vertexCount; i++)
             {
-                vertices[i].tstart = 0;
-                vertices[i].tcount = 0;
+                ref var vertex = ref this.vertices.ElementAt(i);
+                vertex.tstart = 0;
+                vertex.tcount = 0;
             }
 
             for (int i = 0; i < triangleCount; i++)
             {
-                ++vertices[this.triangles[i].v0].tcount;
-                ++vertices[this.triangles[i].v1].tcount;
-                ++vertices[this.triangles[i].v2].tcount;
+                ref var v0 = ref this.vertices.ElementAt(this.triangles[i].v0);
+                ref var v1 = ref this.vertices.ElementAt(this.triangles[i].v1);
+                ref var v2 = ref this.vertices.ElementAt(this.triangles[i].v2);
+                v0.tcount += 1;
+                v1.tcount += 1;
+                v2.tcount += 1;
             }
 
             int tstart = 0;
             for (int i = 0; i < vertexCount; i++)
             {
-                vertices[i].tstart = tstart;
-                tstart += vertices[i].tcount;
-                vertices[i].tcount = 0;
+                ref var vertex = ref this.vertices.ElementAt(i);
+                vertex.tstart = tstart;
+                tstart += vertex.tcount;
+                vertex.tcount = 0;
             }
 
             // Write References
@@ -1210,12 +1215,15 @@ namespace UnityMeshSimplifier
                 int v0 = this.triangles[i].v0;
                 int v1 = this.triangles[i].v1;
                 int v2 = this.triangles[i].v2;
-                int start0 = vertices[v0].tstart;
-                int count0 = vertices[v0].tcount++;
-                int start1 = vertices[v1].tstart;
-                int count1 = vertices[v1].tcount++;
-                int start2 = vertices[v2].tstart;
-                int count2 = vertices[v2].tcount++;
+                ref var vert0 = ref this.vertices.ElementAt(v0);
+                ref var vert1 = ref this.vertices.ElementAt(v1);
+                ref var vert2 = ref this.vertices.ElementAt(v2);
+                int start0 = vert0.tstart;
+                int count0 = vert0.tcount++;
+                int start1 = vert1.tstart;
+                int count1 = vert1.tcount++;
+                int start2 = vert2.tstart;
+                int count2 = vert2.tcount++;
 
                 ref var r0 = ref this.refs.ElementAt(start0 + count0);
                 ref var r1 = ref this.refs.ElementAt(start1 + count1);
@@ -1234,11 +1242,11 @@ namespace UnityMeshSimplifier
         private void CompactMesh()
         {
             int dst = 0;
-            var vertices = this.vertices.Data;
             int vertexCount = this.vertices.Length;
             for (int i = 0; i < vertexCount; i++)
             {
-                vertices[i].tcount = 0;
+                ref var vertex = ref this.vertices.ElementAt(i);
+                vertex.tcount = 0;
             }
 
             var blendShapes = (this.blendShapes != null ? this.blendShapes.Data : null);
@@ -1256,7 +1264,8 @@ namespace UnityMeshSimplifier
                     {
                         int iDest = triangle.va0;
                         int iSrc = triangle.v0;
-                        vertices[iDest].p = vertices[iSrc].p;
+                        ref var destVert = ref this.vertices.ElementAt(iDest);
+                        destVert.p = this.vertices[iSrc].p;
                         if (!this.vertBoneWeights.IsEmpty)
                         {
                             this.vertBoneWeights[iDest] = this.vertBoneWeights[iSrc];
@@ -1267,7 +1276,8 @@ namespace UnityMeshSimplifier
                     {
                         int iDest = triangle.va1;
                         int iSrc = triangle.v1;
-                        vertices[iDest].p = vertices[iSrc].p;
+                        ref var destVert = ref this.vertices.ElementAt(iDest);
+                        destVert.p = this.vertices[iSrc].p;
                         if (!this.vertBoneWeights.IsEmpty)
                         {
                             this.vertBoneWeights[iDest] = this.vertBoneWeights[iSrc];
@@ -1278,7 +1288,8 @@ namespace UnityMeshSimplifier
                     {
                         int iDest = triangle.va2;
                         int iSrc = triangle.v2;
-                        vertices[iDest].p = vertices[iSrc].p;
+                        ref var destVert = ref this.vertices.ElementAt(iDest);
+                        destVert.p = this.vertices[iSrc].p;
                         if (!this.vertBoneWeights.IsEmpty)
                         {
                             this.vertBoneWeights[iDest] = this.vertBoneWeights[iSrc];
@@ -1290,9 +1301,12 @@ namespace UnityMeshSimplifier
                     ref var newTriangle = ref triangles.ElementAt(newTriangleIndex);
                     newTriangle.index = newTriangleIndex;
 
-                    vertices[triangle.v0].tcount = 1;
-                    vertices[triangle.v1].tcount = 1;
-                    vertices[triangle.v2].tcount = 1;
+                    ref var vert0 = ref this.vertices.ElementAt(triangle.v0);
+                    ref var vert1 = ref this.vertices.ElementAt(triangle.v1);
+                    ref var vert2 = ref this.vertices.ElementAt(triangle.v2);
+                    vert0.tcount = 1;
+                    vert1.tcount = 1;
+                    vert2.tcount = 1;
 
                     if (triangle.subMeshIndex > lastSubMeshIndex)
                     {
@@ -1317,15 +1331,16 @@ namespace UnityMeshSimplifier
             dst = 0;
             for (int i = 0; i < vertexCount; i++)
             {
-                var vert = vertices[i];
+                ref var vert = ref this.vertices.ElementAt(i);
                 if (vert.tcount > 0)
                 {
-                    vertices[i].tstart = dst;
+                    vert.tstart = dst;
 
                     if (dst != i)
                     {
-                        vertices[dst].index = dst;
-                        vertices[dst].p = vert.p;
+                        ref var dstVert = ref this.vertices.ElementAt(dst);
+                        dstVert.index = dst;
+                        dstVert.p = vert.p;
                         if (!this.vertNormals.IsEmpty) this.vertNormals[dst] = this.vertNormals[i];
                         if (!this.vertTangents.IsEmpty) this.vertTangents[dst] = this.vertTangents[i];
                         if (this.vertUV2D.IsUsed)
@@ -1376,14 +1391,14 @@ namespace UnityMeshSimplifier
             for (int i = 0; i < triangleCount; i++)
             {
                 var triangle = triangles[i];
-                triangle.v0 = vertices[triangle.v0].tstart;
-                triangle.v1 = vertices[triangle.v1].tstart;
-                triangle.v2 = vertices[triangle.v2].tstart;
+                triangle.v0 = this.vertices[triangle.v0].tstart;
+                triangle.v1 = this.vertices[triangle.v1].tstart;
+                triangle.v2 = this.vertices[triangle.v2].tstart;
                 triangles[i] = triangle;
             }
 
             vertexCount = dst;
-            this.vertices.Resize(vertexCount);
+            this.vertices.Resize(vertexCount, NativeArrayOptions.ClearMemory);
             if (!this.vertNormals.IsEmpty) this.vertNormals.Resize(vertexCount, NativeArrayOptions.ClearMemory);
             if (!this.vertTangents.IsEmpty) this.vertTangents.Resize(vertexCount, NativeArrayOptions.ClearMemory);
             if (this.vertUV2D.IsUsed) this.vertUV2D.Resize(vertexCount, true);
@@ -2007,6 +2022,7 @@ namespace UnityMeshSimplifier
             triangleHashSet1 = new NativeParallelHashSet<Triangle>(10, allocator);
             triangleHashSet2 = new NativeParallelHashSet<Triangle>(10, allocator);
 
+            vertices = new NativeList<Vertex>(allocator);
             Vertices = mesh.vertices;
             InitializeVertexAttribute(mesh.normals, ref vertNormals, "normals", allocator);
             InitializeVertexAttribute(mesh.tangents, ref vertTangents, "tangents", allocator);
@@ -2069,6 +2085,7 @@ namespace UnityMeshSimplifier
 
         public void Dispose()
         {
+            vertices.Dispose();
             triangles.Dispose();
             refs.Dispose();
             vertNormals.Dispose();
@@ -2098,7 +2115,6 @@ namespace UnityMeshSimplifier
             ResizableArray<bool> deleted1 = new ResizableArray<bool>(20);
             int triangleCount = this.triangles.Length;
             int startTrisCount = triangleCount;
-            var vertices = this.vertices.Data;
             int targetTrisCount = Mathf.RoundToInt(triangleCount * quality);
 
             for (int iteration = 0; iteration < simplificationOptions.MaxIterationCount; iteration++)
@@ -2112,7 +2128,6 @@ namespace UnityMeshSimplifier
 #warning no2 heavy method
                     UpdateMesh(iteration);
                     triangleCount = this.triangles.Length;
-                    vertices = this.vertices.Data;
                 }
 
                 // Clear dirty flag
@@ -2156,14 +2171,12 @@ namespace UnityMeshSimplifier
             ResizableArray<bool> deleted1 = new ResizableArray<bool>(0);
             int triangleCount = this.triangles.Length;
             int startTrisCount = triangleCount;
-            var vertices = this.vertices.Data;
 
             for (int iteration = 0; iteration < 9999; iteration++)
             {
                 // Update mesh constantly
                 UpdateMesh(iteration);
                 triangleCount = this.triangles.Length;
-                vertices = this.vertices.Data;
 
                 // Clear dirty flag
                 for (int i = 0; i < triangleCount; i++)
