@@ -47,6 +47,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.NotBurstCompatible;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityMeshSimplifier.Internal;
@@ -57,7 +58,7 @@ namespace UnityMeshSimplifier
     /// The mesh simplifier.
     /// Deeply based on https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification but rewritten completely in C#.
     /// </summary>
-    public sealed class MeshSimplifier : IDisposable
+    public struct MeshSimplifier : IDisposable, IJob
     {
         #region Consts & Static Read-Only
         private const int TriangleEdgeCount = 3;
@@ -68,10 +69,11 @@ namespace UnityMeshSimplifier
         #endregion
 
         #region Fields
-        private SimplificationOptions simplificationOptions = SimplificationOptions.Default;
-        private bool verbose = false;
+        private SimplificationOptions simplificationOptions;
+        private bool verbose;
+        private float quality;
 
-        private int subMeshCount = 0;
+        private int subMeshCount;
         private NativeList<int> subMeshOffsets;
         private NativeList<Triangle> triangles;
         private NativeList<Vertex> vertices;
@@ -108,6 +110,12 @@ namespace UnityMeshSimplifier
                 ValidateOptions(value);
                 this.simplificationOptions = value;
             }
+        }
+
+        public float Quality
+        {
+            get => quality;
+            set => quality = value;
         }
 
         /// <summary>
@@ -431,16 +439,8 @@ namespace UnityMeshSimplifier
         /// <summary>
         /// Creates a new mesh simplifier.
         /// </summary>
-        public MeshSimplifier()
-        {
-        }
-
-        /// <summary>
-        /// Creates a new mesh simplifier.
-        /// </summary>
         /// <param name="mesh">The original mesh to simplify.</param>
-        public MeshSimplifier(Mesh mesh, Allocator allocator)
-            : this()
+        public MeshSimplifier(Mesh mesh, Allocator allocator) : this()
         {
             if (mesh == null)
             {
@@ -2087,13 +2087,19 @@ namespace UnityMeshSimplifier
         #endregion
 
         #region Simplify Mesh
+
+        public void Execute()
+        {
+            SimplifyMesh();
+        }
+
         /// <summary>
         /// Simplifies the mesh to a desired quality.
         /// </summary>
         /// <param name="quality">The target quality (between 0 and 1).</param>
-        public void SimplifyMesh(float quality)
+        public void SimplifyMesh()
         {
-            quality = Mathf.Clamp01(quality);
+            var quality = Mathf.Clamp01(this.quality);
 
             int deletedTris = 0;
             ResizableArray<bool> deleted0 = new ResizableArray<bool>(20);
