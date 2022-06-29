@@ -45,6 +45,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.NotBurstCompatible;
 using Unity.Jobs;
@@ -58,6 +59,7 @@ namespace UnityMeshSimplifier
     /// The mesh simplifier.
     /// Deeply based on https://github.com/sp4cerat/Fast-Quadric-Mesh-Simplification but rewritten completely in C#.
     /// </summary>
+    [BurstCompile]
     public struct MeshSimplifier : IDisposable, IJob
     {
         #region Consts & Static Read-Only
