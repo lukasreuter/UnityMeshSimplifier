@@ -43,7 +43,7 @@ namespace UnityMeshSimplifier.Editor.Tests
 
         [Test]
         public void CheckMeshSimplifierOutput(
-            [Values("Boulder.fbx", /*"Hosmer.OBJ",*/ "Erika.fbx", "Suzanne.fbx", "Teapot.obj")] string meshName,
+            [Values("Boulder.fbx", /*"Hosmer.OBJ",*/ "Erika.fbx", "Monk.fbx", "Suzanne.fbx", "Teapot.obj")] string meshName,
             [Values(1f, 0.65f, 0.4225f)] float quality)
         {
             var testMesh = AssetDatabase.LoadAssetAtPath<Mesh>($"Assets/TestData/{meshName}");
@@ -62,16 +62,16 @@ namespace UnityMeshSimplifier.Editor.Tests
             else
             {
                 var referenceMesh = AssetDatabase.LoadAssetAtPath<Mesh>(assetPath);
-                Assert.That(simplifiedMesh.vertices, Is.EqualTo(referenceMesh.vertices));
-                Assert.That(simplifiedMesh.normals, Is.EqualTo(referenceMesh.normals));
-                Assert.That(simplifiedMesh.tangents, Is.EqualTo(referenceMesh.tangents));
-                Assert.That(simplifiedMesh.colors, Is.EqualTo(referenceMesh.colors));
-                Assert.That(simplifiedMesh.boneWeights, Is.EqualTo(referenceMesh.boneWeights));
-                Assert.That(simplifiedMesh.blendShapeCount, Is.EqualTo(referenceMesh.blendShapeCount));
-                Assert.That(simplifiedMesh.uv, Is.EqualTo(referenceMesh.uv));
-                Assert.That(simplifiedMesh.uv2, Is.EqualTo(referenceMesh.uv2));
-                Assert.That(simplifiedMesh.uv3, Is.EqualTo(referenceMesh.uv3));
-                Assert.That(simplifiedMesh.uv4, Is.EqualTo(referenceMesh.uv4));
+                Assert.That(referenceMesh.vertices, Is.EqualTo(simplifiedMesh.vertices));
+                Assert.That(referenceMesh.normals, Is.EqualTo(simplifiedMesh.normals));
+                Assert.That(referenceMesh.tangents, Is.EqualTo(simplifiedMesh.tangents));
+                Assert.That(referenceMesh.colors, Is.EqualTo(simplifiedMesh.colors));
+                Assert.That(referenceMesh.boneWeights, Is.EqualTo(simplifiedMesh.boneWeights));
+                Assert.That(referenceMesh.blendShapeCount, Is.EqualTo(simplifiedMesh.blendShapeCount));
+                Assert.That(referenceMesh.uv, Is.EqualTo(simplifiedMesh.uv), "uv");
+                Assert.That(referenceMesh.uv2, Is.EqualTo(simplifiedMesh.uv2), "uv2");
+                Assert.That(referenceMesh.uv3, Is.EqualTo(simplifiedMesh.uv3), "uv3");
+                Assert.That(referenceMesh.uv4, Is.EqualTo(simplifiedMesh.uv4), "uv4");
 
             }
         }
