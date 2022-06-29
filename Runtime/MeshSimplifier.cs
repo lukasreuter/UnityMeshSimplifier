@@ -1057,7 +1057,7 @@ namespace UnityMeshSimplifier
                 if (simplificationOptions.EnableSmartLink)
                 {
                     // First find all border vertices
-                    var borderVertices = new BorderVertex[borderVertexCount];
+                    var borderVertices = new NativeArray<BorderVertex>(borderVertexCount, Allocator.Temp);
                     int borderIndexCount = 0;
                     double borderAreaWidth = borderMaxX - borderMinX;
                     for (int i = 0; i < vertexCount; i++)
@@ -1070,8 +1070,14 @@ namespace UnityMeshSimplifier
                         }
                     }
 
+                    // var bla = new NativeArray<BorderVertex>();
+                    // var slice = bla.Slice(0, borderIndexCount);
+                    // slice.Sort(new BorderVertexComparer());
+                    var slice = borderVertices.Slice(0, borderIndexCount);
+                    slice.Sort(new BorderVertexComparer());
+
                     // Sort the border vertices by hash
-                    Array.Sort(borderVertices, 0, borderIndexCount, BorderVertexComparer.instance);
+                    // Array.Sort(borderVertices, 0, borderIndexCount, BorderVertexComparer.instance);
 
                     // Calculate the maximum hash distance based on the maximum vertex link distance
                     double vertexLinkDistance = Math.Sqrt(vertexLinkDistanceSqr);
@@ -1101,7 +1107,10 @@ namespace UnityMeshSimplifier
 
                             if (sqrMagnitude <= vertexLinkDistanceSqr)
                             {
-                                borderVertices[j].index = -1; // NOTE: This makes sure that the "other" vertex is not processed again
+                                var bv = borderVertices[j];
+                                bv.index = -1; // NOTE: This makes sure that the "other" vertex is not processed again
+                                borderVertices[j] = bv;
+
                                 ref var myVertex = ref this.vertices.ElementAt(myIndex);
                                 myVertex.borderEdge = false;
                                 ref var otherVertex = ref vertices.ElementAt(otherIndex);
