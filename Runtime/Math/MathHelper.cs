@@ -26,6 +26,7 @@ SOFTWARE.
 
 using System;
 using System.Runtime.CompilerServices;
+using Unity.Mathematics;
 
 namespace UnityMeshSimplifier
 {
@@ -106,11 +107,18 @@ namespace UnityMeshSimplifier
         /// <param name="p2">The third point.</param>
         /// <returns>The triangle area.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double TriangleArea(ref Vector3d p0, ref Vector3d p1, ref Vector3d p2)
+        public static double TriangleArea(in double3 p0, in double3 p1, in double3 p2)
         {
             var dx = p1 - p0;
             var dy = p2 - p0;
-            return dx.Magnitude * (Math.Sin(Vector3d.Angle(ref dx, ref dy) * Deg2Radd) * dy.Magnitude) * 0.5f;
+            return math.length(dx) * (math.sin(Angle(dx, dy) * Deg2Radd) * math.length(dy)) * 0.5f;
+
+            double Angle(double3 from, double3 to)
+            {
+                double3 fromNormalized = math.normalizesafe(from);
+                double3 toNormalized = math.normalizesafe(to);
+                return math.acos(math.clamp(math.dot(fromNormalized, toNormalized), -1.0, 1.0)) * Rad2Degd;
+            }
         }
         #endregion
     }

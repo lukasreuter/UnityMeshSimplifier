@@ -51,7 +51,9 @@ namespace UnityMeshSimplifier.Editor.Tests
             Assert.That(testMesh, Is.Not.Null);
 
             // load a reference mesh and check the output from the simplifier against a know output to make we do not break anything with the burst refactor
-            var simplifiedMesh = LODGenerator.SimplifyMesh(testMesh, quality, SimplificationOptions.Default);
+            var simplificationOptions = SimplificationOptions.Default;
+            // simplificationOptions.PreserveSurfaceCurvature = true;
+            var simplifiedMesh = LODGenerator.SimplifyMesh(testMesh, quality, simplificationOptions);
 
             var assetPath = $"Assets/TestData/{meshName}_decimated_{quality.ToString(CultureInfo.InvariantCulture)}.mesh";
 

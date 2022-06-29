@@ -70,11 +70,11 @@ namespace UnityMeshSimplifier.Internal
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, ref Vector3 barycentricCoord)
+        public void InterpolateVertexAttributes(int dst, int i0, int i1, int i2, in Vector3 barycentricCoord)
         {
             for (int i = 0; i < frames.Length; i++)
             {
-                frames[i].InterpolateVertexAttributes(dst, i0, i1, i2, ref barycentricCoord);
+                frames[i].InterpolateVertexAttributes(dst, i0, i1, i2, in barycentricCoord);
             }
         }
 
