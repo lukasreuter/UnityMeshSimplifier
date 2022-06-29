@@ -2136,7 +2136,7 @@ namespace UnityMeshSimplifier
 
                 if (verbose)
                 {
-                    Debug.LogFormat("iteration {0} - triangles {1} threshold {2}", iteration, (startTrisCount - deletedTris), threshold);
+                    Debug.Log($"iteration {iteration} - triangles {(startTrisCount - deletedTris)} threshold {threshold}");
                 }
 
 #warning no1 heavy method
@@ -2148,7 +2148,7 @@ namespace UnityMeshSimplifier
 
             if (verbose)
             {
-                Debug.LogFormat("Finished simplification with triangle count {0}", this.triangles.Length);
+                Debug.Log($"Finished simplification with triangle count {this.triangles.Length}");
             }
         }
 
@@ -2184,7 +2184,7 @@ namespace UnityMeshSimplifier
 
                 if (verbose)
                 {
-                    Debug.LogFormat("Lossless iteration {0} - triangles {1}", iteration, triangleCount);
+                    Debug.Log($"Lossless iteration {iteration} - triangles {triangleCount}");
                 }
 
                 // Remove vertices & mark deleted triangles
@@ -2200,7 +2200,7 @@ namespace UnityMeshSimplifier
 
             if (verbose)
             {
-                Debug.LogFormat("Finished simplification with triangle count {0}", this.triangles.Length);
+                Debug.Log($"Finished simplification with triangle count {this.triangles.Length}");
             }
         }
         #endregion
