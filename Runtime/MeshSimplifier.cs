@@ -649,7 +649,7 @@ namespace UnityMeshSimplifier
         /// <summary>
         /// Check if a triangle flips when this edge is removed
         /// </summary>
-        private bool Flipped(ref Vector3d p, int i0, int i1, ref Vertex v0, bool[] deleted)
+        private bool Flipped(ref Vector3d p, int i0, int i1, ref Vertex v0, NativeList<bool> deleted)
         {
             int tcount = v0.tcount;
             for (int k = 0; k < tcount; k++)
@@ -692,7 +692,7 @@ namespace UnityMeshSimplifier
         /// <summary>
         /// Update triangle connections and edge error after a edge is collapsed.
         /// </summary>
-        private void UpdateTriangles(int i0, int ia0, ref Vertex v, ResizableArray<bool> deleted, ref int deletedTriangles)
+        private void UpdateTriangles(int i0, int ia0, ref Vertex v, NativeList<bool> deleted, ref int deletedTriangles)
         {
             Vector3d p;
             int tcount = v.tcount;
@@ -825,7 +825,13 @@ namespace UnityMeshSimplifier
         /// <summary>
         /// Remove vertices and mark deleted triangles
         /// </summary>
-        private void RemoveVertexPass(int startTrisCount, int targetTrisCount, double threshold, ResizableArray<bool> deleted0, ResizableArray<bool> deleted1, ref int deletedTris)
+        private void RemoveVertexPass(
+            int startTrisCount,
+            int targetTrisCount,
+            double threshold,
+            NativeList<bool> deleted0,
+            NativeList<bool> deleted1,
+            ref int deletedTris)
         {
             int triangleCount = this.triangles.Length;
 
@@ -868,13 +874,13 @@ namespace UnityMeshSimplifier
 
                     // Compute vertex to collapse to
                     CalculateError(ref this.vertices.ElementAt(i0), ref this.vertices.ElementAt(i1), out p);
-                    deleted0.Resize(this.vertices[i0].tcount); // normals temporarily
-                    deleted1.Resize(this.vertices[i1].tcount); // normals temporarily
+                    deleted0.Resize(this.vertices[i0].tcount, NativeArrayOptions.ClearMemory); // normals temporarily
+                    deleted1.Resize(this.vertices[i1].tcount, NativeArrayOptions.ClearMemory); // normals temporarily
 
                     // Don't remove if flipped
-                    if (Flipped(ref p, i0, i1, ref this.vertices.ElementAt(i0), deleted0.Data))
+                    if (Flipped(ref p, i0, i1, ref this.vertices.ElementAt(i0), deleted0))
                         continue;
-                    if (Flipped(ref p, i1, i0, ref this.vertices.ElementAt(i1), deleted1.Data))
+                    if (Flipped(ref p, i1, i0, ref this.vertices.ElementAt(i1), deleted1))
                         continue;
 
                     // Calculate the barycentric coordinates within the triangle
@@ -968,8 +974,8 @@ namespace UnityMeshSimplifier
             // Identify boundary : vertices[].border=0,1
             if (iteration == 0)
             {
-                var vcount = new List<int>(8);
-                var vids = new List<int>(8);
+                using var vcount = new NativeList<int>(8, Allocator.Temp);
+                using var vids = new NativeList<int>(8, Allocator.Temp);
                 int vsize = 0;
                 for (int i = 0; i < vertexCount; i++)
                 {
@@ -1016,7 +1022,8 @@ namespace UnityMeshSimplifier
                             }
                             else
                             {
-                                ++vcount[ofs];
+                                ref var count = ref vcount.ElementAt(ofs);
+                                count += 1;
                             }
                         }
                     }
@@ -2102,8 +2109,8 @@ namespace UnityMeshSimplifier
             var quality = Mathf.Clamp01(this.quality);
 
             int deletedTris = 0;
-            ResizableArray<bool> deleted0 = new ResizableArray<bool>(20);
-            ResizableArray<bool> deleted1 = new ResizableArray<bool>(20);
+            using var deleted0 = new NativeList<bool>(20, Allocator.Temp);
+            using var deleted1 = new NativeList<bool>(20, Allocator.Temp);
             int triangleCount = this.triangles.Length;
             int startTrisCount = triangleCount;
             int targetTrisCount = Mathf.RoundToInt(triangleCount * quality);
@@ -2158,8 +2165,8 @@ namespace UnityMeshSimplifier
         public void SimplifyMeshLossless()
         {
             int deletedTris = 0;
-            ResizableArray<bool> deleted0 = new ResizableArray<bool>(0);
-            ResizableArray<bool> deleted1 = new ResizableArray<bool>(0);
+            using var deleted0 = new NativeList<bool>(0, Allocator.Temp);
+            using var deleted1 = new NativeList<bool>(0, Allocator.Temp);
             int triangleCount = this.triangles.Length;
             int startTrisCount = triangleCount;
 

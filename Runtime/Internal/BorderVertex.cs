@@ -42,7 +42,7 @@ namespace UnityMeshSimplifier.Internal
         }
     }
 
-    internal class BorderVertexComparer : IComparer<BorderVertex>
+    internal struct BorderVertexComparer : IComparer<BorderVertex>
     {
         public static readonly BorderVertexComparer instance = new BorderVertexComparer();
 
