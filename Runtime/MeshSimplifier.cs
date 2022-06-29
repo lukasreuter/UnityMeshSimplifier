@@ -72,7 +72,7 @@ namespace UnityMeshSimplifier
         private bool verbose = false;
 
         private int subMeshCount = 0;
-        private int[] subMeshOffsets = null;
+        private NativeList<int> subMeshOffsets;
         private NativeList<Triangle> triangles;
         private NativeList<Vertex> vertices;
         private NativeList<Ref> refs;
@@ -1252,7 +1252,8 @@ namespace UnityMeshSimplifier
             var blendShapes = (this.blendShapes != null ? this.blendShapes.Data : null);
 
             int lastSubMeshIndex = -1;
-            subMeshOffsets = new int[subMeshCount];
+            subMeshOffsets.Clear();
+            subMeshOffsets.Length = subMeshCount;
 
             int triangleCount = this.triangles.Length;
             for (int i = 0; i < triangleCount; i++)
@@ -1421,7 +1422,8 @@ namespace UnityMeshSimplifier
         private void CalculateSubMeshOffsets()
         {
             int lastSubMeshIndex = -1;
-            subMeshOffsets = new int[subMeshCount];
+            subMeshOffsets.Clear();
+            subMeshOffsets.Length = subMeshCount;
 
             int triangleCount = this.triangles.Length;
             for (int i = 0; i < triangleCount; i++)
@@ -1507,7 +1509,7 @@ namespace UnityMeshSimplifier
                 throw new ArgumentOutOfRangeException(nameof(subMeshIndex), "The sub-mesh index is negative.");
 
             // First get the sub-mesh offsets
-            if (subMeshOffsets == null)
+            if (subMeshOffsets.IsEmpty)
             {
                 CalculateSubMeshOffsets();
             }
@@ -1551,7 +1553,7 @@ namespace UnityMeshSimplifier
         public void ClearSubMeshes()
         {
             subMeshCount = 0;
-            subMeshOffsets = null;
+            subMeshOffsets.Clear();
             triangles.Resize(0, NativeArrayOptions.ClearMemory);
         }
 
@@ -2014,6 +2016,7 @@ namespace UnityMeshSimplifier
             if (mesh == null)
                 throw new ArgumentNullException(nameof(mesh));
 
+            subMeshOffsets = new NativeList<int>(allocator);
             triangles = new NativeList<Triangle>(allocator);
             refs = new NativeList<Ref>(allocator);
             vertUV2D = new UVChannels<Vector2>(allocator);
@@ -2087,6 +2090,7 @@ namespace UnityMeshSimplifier
         {
             vertices.Dispose();
             triangles.Dispose();
+            subMeshOffsets.Dispose();
             refs.Dispose();
             vertNormals.Dispose();
             vertTangents.Dispose();
