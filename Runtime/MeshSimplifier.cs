@@ -446,8 +446,7 @@ namespace UnityMeshSimplifier
         {
             if (mesh == null)
             {
-                #warning throw error instead
-                return;
+                throw new ArgumentNullException(nameof(mesh), "Mesh must not be null, aborting!");
             }
 
             Initialize(mesh, allocator);
@@ -2109,7 +2108,6 @@ namespace UnityMeshSimplifier
                 // Update mesh once in a while
                 if ((iteration % 5) == 0)
                 {
-#warning no2 heavy method
                     UpdateMesh(iteration);
                     triangleCount = this.triangles.Length;
                 }
@@ -2132,7 +2130,6 @@ namespace UnityMeshSimplifier
                     Debug.Log($"iteration {iteration} - triangles {(startTrisCount - deletedTris)} threshold {threshold}");
                 }
 
-#warning no1 heavy method
                 // Remove vertices & mark deleted triangles
                 RemoveVertexPass(startTrisCount, targetTrisCount, threshold, deleted0, deleted1, ref deletedTris);
             }
