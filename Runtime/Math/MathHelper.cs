@@ -78,8 +78,7 @@ namespace UnityMeshSimplifier
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double Min(double val1, double val2, double val3)
         {
-            #warning replace with two math.min calls instead
-            return (val1 < val2 ? (val1 < val3 ? val1 : val3) : (val2 < val3 ? val2 : val3));
+            return math.min(math.min(val1, val2), val3);
         }
         #endregion
 
