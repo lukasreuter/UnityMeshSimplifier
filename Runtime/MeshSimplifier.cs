@@ -481,31 +481,6 @@ namespace UnityMeshSimplifier
             }
         }
 
-        private void InitializeVertexAttribute<T>(T[] attributeValues, ref ResizableArray<T> attributeArray, string attributeName)
-        {
-            if (attributeValues != null && attributeValues.Length == vertices.Length)
-            {
-                if (attributeArray == null)
-                {
-                    attributeArray = new ResizableArray<T>(attributeValues.Length, attributeValues.Length);
-                }
-                else
-                {
-                    attributeArray.Resize(attributeValues.Length);
-                }
-
-                var arrayData = attributeArray.Data;
-                Array.Copy(attributeValues, 0, arrayData, 0, attributeValues.Length);
-            }
-            else
-            {
-                if (attributeValues != null && attributeValues.Length > 0)
-                {
-                    Debug.LogErrorFormat("Failed to set vertex attribute '{0}' with {1} length of array, when {2} was needed.", attributeName, attributeValues.Length, vertices.Length);
-                }
-                attributeArray = null;
-            }
-        }
         #endregion
 
         #region Calculate Error
