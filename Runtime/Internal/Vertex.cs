@@ -26,13 +26,14 @@ SOFTWARE.
 
 using System;
 using System.Runtime.CompilerServices;
+using Unity.Mathematics;
 
 namespace UnityMeshSimplifier.Internal
 {
     internal struct Vertex : IEquatable<Vertex>
     {
         public int index;
-        public Vector3d p;
+        public double3 p;
         public int tstart;
         public int tcount;
         public SymmetricMatrix q;
@@ -41,7 +42,7 @@ namespace UnityMeshSimplifier.Internal
         public bool uvFoldoverEdge;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vertex(int index, Vector3d p)
+        public Vertex(int index, double3 p)
         {
             this.index = index;
             this.p = p;

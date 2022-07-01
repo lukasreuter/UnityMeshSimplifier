@@ -289,7 +289,7 @@ namespace UnityMeshSimplifier
                 var verts = new Vector3[vertexCount];
                 for (int i = 0; i < vertexCount; i++)
                 {
-                    verts[i] = (Vector3)this.vertices[i].p;
+                    verts[i] = (float3)this.vertices[i].p;
                 }
                 return verts;
             }
@@ -305,7 +305,7 @@ namespace UnityMeshSimplifier
                 vertices.Resize(value.Length, NativeArrayOptions.ClearMemory);
                 for (int i = 0; i < value.Length; i++)
                 {
-                    vertices[i] = new Vertex(i, value[i]);
+                    vertices[i] = new Vertex(i, (float3) value[i]);
                 }
             }
         }
@@ -519,7 +519,7 @@ namespace UnityMeshSimplifier
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private double CurvatureError(ref Vertex vert0, ref Vertex vert1)
         {
-            double diffVector = (vert0.p - vert1.p).Magnitude;
+            double diffVector = math.length((vert0.p - vert1.p));
 
             var trianglesWithViOrVjOrBoth = triangleHashSet1;
             trianglesWithViOrVjOrBoth.Clear();
@@ -534,12 +534,12 @@ namespace UnityMeshSimplifier
             foreach (var triangleWithViOrVjOrBoth in trianglesWithViOrVjOrBoth)
             {
                 double maxDotInner = 0;
-                Vector3d normVecTriangleWithViOrVjOrBoth = triangleWithViOrVjOrBoth.n;
+                double3 normVecTriangleWithViOrVjOrBoth = triangleWithViOrVjOrBoth.n;
 
                 foreach (var triangleWithViAndVjBoth in trianglesWithViAndVjBoth)
                 {
-                    Vector3d normVecTriangleWithViAndVjBoth = triangleWithViAndVjBoth.n;
-                    double dot = Vector3d.Dot(ref normVecTriangleWithViOrVjOrBoth, ref normVecTriangleWithViAndVjBoth);
+                    double3 normVecTriangleWithViAndVjBoth = triangleWithViAndVjBoth.n;
+                    double dot = math.dot(normVecTriangleWithViOrVjOrBoth, normVecTriangleWithViAndVjBoth);
 
                     if (dot > maxDotInner)
                         maxDotInner = dot;
@@ -552,7 +552,7 @@ namespace UnityMeshSimplifier
             return diffVector * maxDotOuter;
         }
 
-        private double CalculateError(ref Vertex vert0, ref Vertex vert1, out Vector3d result)
+        private double CalculateError(ref Vertex vert0, ref Vertex vert1, out double3 result)
         {
             // compute interpolated vertex
             SymmetricMatrix q = (vert0.q + vert1.q);
@@ -562,7 +562,7 @@ namespace UnityMeshSimplifier
             if (det != 0.0 && !borderEdge)
             {
                 // q_delta is invertible
-                result = new Vector3d(
+                result = new double3(
                     -1.0 / det * q.Determinant2(),  // vx = A41/det(q_delta)
                     1.0 / det * q.Determinant3(),   // vy = A42/det(q_delta)
                     -1.0 / det * q.Determinant4()); // vz = A43/det(q_delta)
@@ -578,9 +578,9 @@ namespace UnityMeshSimplifier
             else
             {
                 // det = 0 -> try to find best result
-                Vector3d p1 = vert0.p;
-                Vector3d p2 = vert1.p;
-                Vector3d p3 = (p1 + p2) * 0.5f;
+                double3 p1 = vert0.p;
+                double3 p2 = vert1.p;
+                double3 p3 = (p1 + p2) * 0.5f;
                 double error1 = VertexError(ref q, p1.x, p1.y, p1.z);
                 double error2 = VertexError(ref q, p2.x, p2.y, p2.z);
                 double error3 = VertexError(ref q, p3.x, p3.y, p3.z);
@@ -614,14 +614,14 @@ namespace UnityMeshSimplifier
         #endregion
 
         #region Calculate Barycentric Coordinates
-        private static void CalculateBarycentricCoords(ref Vector3d point, ref Vector3d a, ref Vector3d b, ref Vector3d c, out Vector3 result)
+        private static void CalculateBarycentricCoords(ref double3 point, ref double3 a, ref double3 b, ref double3 c, out Vector3 result)
         {
-            Vector3d v0 = (b - a), v1 = (c - a), v2 = (point - a);
-            double d00 = Vector3d.Dot(ref v0, ref v0);
-            double d01 = Vector3d.Dot(ref v0, ref v1);
-            double d11 = Vector3d.Dot(ref v1, ref v1);
-            double d20 = Vector3d.Dot(ref v2, ref v0);
-            double d21 = Vector3d.Dot(ref v2, ref v1);
+            double3 v0 = (b - a), v1 = (c - a), v2 = (point - a);
+            double d00 = math.dot(v0, v0);
+            double d01 = math.dot(v0, v1);
+            double d11 = math.dot(v1, v1);
+            double d20 = math.dot(v2, v0);
+            double d21 = math.dot(v2, v1);
             double denom = d00 * d11 - d01 * d01;
 
             // Make sure the denominator is not too small to cause math problems
@@ -651,7 +651,7 @@ namespace UnityMeshSimplifier
         /// <summary>
         /// Check if a triangle flips when this edge is removed
         /// </summary>
-        private bool Flipped(ref Vector3d p, int i0, int i1, ref Vertex v0, NativeList<bool> deleted)
+        private bool Flipped(ref double3 p, int i0, int i1, ref Vertex v0, NativeList<bool> deleted)
         {
             int tcount = v0.tcount;
             for (int k = 0; k < tcount; k++)
@@ -669,17 +669,17 @@ namespace UnityMeshSimplifier
                     continue;
                 }
 
-                Vector3d d1 = this.vertices[id1].p - p;
-                d1.Normalize();
-                Vector3d d2 = this.vertices[id2].p - p;
-                d2.Normalize();
-                double dot = Vector3d.Dot(ref d1, ref d2);
+                double3 d1 = this.vertices[id1].p - p;
+                d1 = math.normalizesafe(d1);
+                double3 d2 = this.vertices[id2].p - p;
+                d2 = math.normalizesafe(d2);
+                double dot = math.dot(d1, d2);
                 if (Math.Abs(dot) > 0.999)
                     return true;
 
-                Vector3d n;
-                Vector3d.Cross(ref d1, ref d2, out n);
-                n.Normalize();
+
+                double3 n = math.cross(d1, d2);
+                n = math.normalizesafe(n);
                 deleted[k] = false;
                 dot = math.dot(n, this.triangles[r.tID].n);
                 if (dot < 0.2)
@@ -696,7 +696,7 @@ namespace UnityMeshSimplifier
         /// </summary>
         private void UpdateTriangles(int i0, int ia0, ref Vertex v, NativeList<bool> deleted, ref int deletedTriangles)
         {
-            Vector3d p;
+            double3 p;
             int tcount = v.tcount;
             for (int k = 0; k < tcount; k++)
             {
@@ -837,7 +837,7 @@ namespace UnityMeshSimplifier
         {
             int triangleCount = this.triangles.Length;
 
-            Vector3d p;
+            double3 p;
             Vector3 barycentricCoord;
             for (int tid = 0; tid < triangleCount; tid++)
             {
@@ -1154,7 +1154,7 @@ namespace UnityMeshSimplifier
                     vertex.q = new SymmetricMatrix();
                 }
 
-                Vector3d n, p0, p1, p2, p10, p20, dummy;
+                double3 n, p0, p1, p2, p10, p20, dummy;
                 SymmetricMatrix sm;
                 for (int i = 0; i < triangleCount; i++)
                 {
@@ -1168,11 +1168,11 @@ namespace UnityMeshSimplifier
                     p2 = v2.p;
                     p10 = p1 - p0;
                     p20 = p2 - p0;
-                    Vector3d.Cross(ref p10, ref p20, out n);
-                    n.Normalize();
+                    n = math.cross(p10, p20);
+                    n = math.normalizesafe(n);
                     triangle.n = n;
 
-                    sm = new SymmetricMatrix(n.x, n.y, n.z, -Vector3d.Dot(ref n, ref p0));
+                    sm = new SymmetricMatrix(n.x, n.y, n.z, -math.dot(n, p0));
                     v0.q += sm;
                     v1.q += sm;
                     v2.q += sm;

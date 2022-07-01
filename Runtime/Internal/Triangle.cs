@@ -51,7 +51,7 @@ namespace UnityMeshSimplifier.Internal
 
         public bool deleted;
         public bool dirty;
-        public Vector3d n;
+        public double3 n;
         #endregion
 
         #region Properties
@@ -100,7 +100,7 @@ namespace UnityMeshSimplifier.Internal
 
             err0 = err1 = err2 = err3 = 0;
             deleted = dirty = false;
-            n = new Vector3d();
+            n = new double3();
         }
         #endregion
 
