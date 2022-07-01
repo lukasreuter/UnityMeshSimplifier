@@ -332,7 +332,7 @@ namespace UnityMeshSimplifier
         public Vector3[] Normals
         {
             get => (vertNormals.IsCreated ? vertNormals.ToArrayNBC() : null);
-            // set =>
+            set => InitializeVertexAttribute(value, ref vertNormals, "normals");
         }
 
         /// <summary>
@@ -341,7 +341,7 @@ namespace UnityMeshSimplifier
         public Vector4[] Tangents
         {
             get => (vertTangents.IsCreated ? vertTangents.ToArrayNBC() : null);
-            // set => InitializeVertexAttribute(value, ref vertTangents, "tangents");
+            set => InitializeVertexAttribute(value, ref vertTangents, "tangents");
         }
 
         /// <summary>
@@ -424,7 +424,7 @@ namespace UnityMeshSimplifier
         public Color[] Colors
         {
             get => (vertColors.IsCreated ? vertColors.ToArrayNBC() : null);
-            // set => InitializeVertexAttribute(value, ref vertColors, "colors");
+            set => InitializeVertexAttribute(value, ref vertColors, "colors");
         }
 
         /// <summary>
@@ -433,7 +433,7 @@ namespace UnityMeshSimplifier
         public BoneWeight[] BoneWeights
         {
             get => (vertBoneWeights.IsCreated ? vertBoneWeights.ToArrayNBC() : null);
-            // set => InitializeVertexAttribute(value, ref vertBoneWeights, "boneWeights");
+            set => InitializeVertexAttribute(value, ref vertBoneWeights, "boneWeights");
         }
         #endregion
 
@@ -465,6 +465,26 @@ namespace UnityMeshSimplifier
         {
             attributeArray = new NativeList<T>(0, allocator);
 
+            if (attributeValues != null && attributeValues.Length == vertices.Length)
+            {
+                attributeArray.Resize(attributeValues.Length, NativeArrayOptions.ClearMemory);
+
+                NativeArray<T>.Copy(attributeValues, 0, attributeArray, 0, attributeValues.Length);
+            }
+            else
+            {
+                if (attributeValues != null && attributeValues.Length > 0)
+                {
+                    Debug.LogError($"Failed to set vertex attribute '{attributeName}' with {attributeValues.Length} length of array, when {vertices.Length} was needed.");
+                }
+            }
+        }
+
+        private void InitializeVertexAttribute<T>(
+            T[] attributeValues,
+            ref NativeList<T> attributeArray,
+            string attributeName) where T : unmanaged
+        {
             if (attributeValues != null && attributeValues.Length == vertices.Length)
             {
                 attributeArray.Resize(attributeValues.Length, NativeArrayOptions.ClearMemory);
