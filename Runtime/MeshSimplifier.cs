@@ -913,8 +913,7 @@ namespace UnityMeshSimplifier
                         // save ram
                         if (tcount > 0)
                         {
-                            NativeArray<Ref>.Copy(refs, tstart, refs, this.vertices[i0].tstart, tcount);
-                            // Array.Copy(refsArr, tstart, refsArr, vertices[i0].tstart, tcount);
+                            NativeArray<Ref>.Copy(refs.AsArray(), tstart, refs.AsArray(), this.vertices[i0].tstart, tcount);
                         }
                     }
                     else
@@ -1064,14 +1063,9 @@ namespace UnityMeshSimplifier
                         }
                     }
 
-                    // var bla = new NativeArray<BorderVertex>();
-                    // var slice = bla.Slice(0, borderIndexCount);
-                    // slice.Sort(new BorderVertexComparer());
+                    // Sort the border vertices by hash
                     var slice = borderVertices.Slice(0, borderIndexCount);
                     slice.Sort(new BorderVertexComparer());
-
-                    // Sort the border vertices by hash
-                    // Array.Sort(borderVertices, 0, borderIndexCount, BorderVertexComparer.instance);
 
                     // Calculate the maximum hash distance based on the maximum vertex link distance
                     double vertexLinkDistance = Math.Sqrt(vertexLinkDistanceSqr);
